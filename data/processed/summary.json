@@ -1,0 +1,141 @@
+{
+  "per_dataset": {
+    "nq": {
+      "hop_type": "single",
+      "pool_size": 6515,
+      "unscorable_dropped": 1,
+      "ambiguous_dropped": 8,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 9.17,
+      "mean_answers_per_question": 1.3,
+      "frac_multi_answer": 0.124
+    },
+    "triviaqa": {
+      "hop_type": "single",
+      "pool_size": 8837,
+      "unscorable_dropped": 0,
+      "ambiguous_dropped": 4,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 13.87,
+      "mean_answers_per_question": 13.48,
+      "frac_multi_answer": 0.886
+    },
+    "popqa": {
+      "hop_type": "single",
+      "pool_size": 14267,
+      "unscorable_dropped": 0,
+      "ambiguous_dropped": 2354,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 6.62,
+      "mean_answers_per_question": 3.77,
+      "frac_multi_answer": 0.718
+    },
+    "hotpotqa": {
+      "hop_type": "multi",
+      "pool_size": 7405,
+      "unscorable_dropped": 2,
+      "ambiguous_dropped": 0,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 15.61,
+      "mean_answers_per_question": 1,
+      "frac_multi_answer": 0.0
+    },
+    "2wikimultihopqa": {
+      "hop_type": "multi",
+      "pool_size": 12576,
+      "unscorable_dropped": 0,
+      "ambiguous_dropped": 0,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 11.91,
+      "mean_answers_per_question": 2.85,
+      "frac_multi_answer": 0.572
+    },
+    "musique": {
+      "hop_type": "multi",
+      "pool_size": 2417,
+      "unscorable_dropped": 0,
+      "ambiguous_dropped": 18,
+      "sampled": 500,
+      "splits": {
+        "train": 300,
+        "dev": 100,
+        "test": 100
+      },
+      "mean_question_words": 18.04,
+      "mean_answers_per_question": 1.43,
+      "frac_multi_answer": 0.28
+    }
+  },
+  "total": {
+    "questions": 3000,
+    "splits": {
+      "train": 1800,
+      "dev": 600,
+      "test": 600
+    }
+  },
+  "accuracy_min_alias_chars": 3,
+  "short_alias_questions": {
+    "nq": {
+      "train": 0,
+      "dev": 0,
+      "test": 0,
+      "total": 0
+    },
+    "triviaqa": {
+      "train": 22,
+      "dev": 6,
+      "test": 4,
+      "total": 32
+    },
+    "popqa": {
+      "train": 28,
+      "dev": 12,
+      "test": 8,
+      "total": 48
+    },
+    "hotpotqa": {
+      "train": 0,
+      "dev": 0,
+      "test": 0,
+      "total": 0
+    },
+    "2wikimultihopqa": {
+      "train": 21,
+      "dev": 6,
+      "test": 9,
+      "total": 36
+    },
+    "musique": {
+      "train": 10,
+      "dev": 5,
+      "test": 1,
+      "total": 16
+    }
+  }
+}

@@ -1,0 +1,88 @@
+# Single source of truth for all experiment settings.
+# Changing anything here changes config_hash, which is written into every output record.
+
+seed: 42
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  splits: data/splits
+  corpora: data/corpora
+  indexes: indexes
+  cache: cache
+  results: results
+  dryrun_root: runs/dryrun        # all --dry-run outputs live here; never touches real splits/results
+
+data:
+  n_per_dataset: 500
+  split_ratios: {train: 0.6, dev: 0.2, test: 0.2}
+  datasets: [nq, triviaqa, popqa, hotpotqa, 2wikimultihopqa, musique]
+  dry_run_n: 8
+
+retrieval:
+  top_k: 5
+  candidate_k: 100                # ES retriever in IRCoT/Adaptive-RAG fetches 100, dedups, then cuts
+  bm25: {k1: 1.2, b: 0.75}        # Elasticsearch 7.10 defaults (used by Adaptive-RAG)
+  dedup_by_text: true
+  corpus_for:
+    nq: wiki
+    triviaqa: wiki
+    popqa: wiki
+    hotpotqa: hotpotqa
+    2wikimultihopqa: 2wikimultihopqa
+    musique: musique
+
+llm:
+  provider: openai
+  model: gpt-5-nano-2025-08-07
+  api: responses
+  # Requested generation params. Each is probed (python -m src.llm --probe);
+  # unsupported ones are dropped with a WARNING and recorded in every output record.
+  params:
+    reasoning_effort: minimal
+    verbosity: low
+    max_output_tokens: 256
+    temperature: 0
+    top_p: 1
+    seed: 42
+    store: false
+  timeout_s: 60
+
+prompts:
+  system: prompts/system.txt
+  llm_only: prompts/llm_only.txt
+  always_rag: prompts/always_rag.txt
+  passage: prompts/passage.txt
+
+runner:
+  concurrency: 8
+  rpm: 500
+  tpm: 200000
+  max_retries: 6
+  backoff_base_s: 1
+  backoff_max_s: 60
+
+latency:
+  split: test
+  n: 200
+  concurrency: 1
+  warmup: 5
+
+eval:
+  correct_metric: accuracy        # one of: accuracy, em, f1
+  f1_threshold: 0.5               # only used when correct_metric == f1
+  accuracy_min_alias_chars: 3     # accuracy ignores aliases of <= 2 normalized chars (primary always kept)
+  answer_sets: [all, primary_only]  # first = main report; primary_only = Adaptive-RAG comparison
+  bootstrap_samples: 10000
+  ci: 0.95
+
+pricing:
+  gpt-5-nano-2025-08-07:
+    input_per_1m: 0.05
+    cached_input_per_1m: 0.005
+    output_per_1m: 0.40
+    source: https://developers.openai.com/api/docs/models/gpt-5-nano
+    retrieved: "2026-10-14"
+  retrieval_bm25:
+    per_call_usd: 0.0
+    note: local Pyserini BM25; reported as call count and latency, monetary cost 0

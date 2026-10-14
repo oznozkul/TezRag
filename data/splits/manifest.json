@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-10-14T08:48:50.940092+00:00",
+  "seed": 42,
+  "config_hash": "207bfd420d0404c7",
+  "n_per_dataset": 500,
+  "split_ratios": {
+    "train": 0.6,
+    "dev": 0.2,
+    "test": 0.2
+  },
+  "dry_run": false,
+  "raw_sources_sha256": {
+    "2wiki_raw/extracted/data_ids/dev.json": "21b0a6ffef454f887b5a7a6115db443d3476e99fefeb05d4c5fb73be01582554",
+    "2wiki_raw/extracted/data_ids/id_aliases.json": "f08ffcb6c2cefca9bdbe86b4248d6ad7a7743762d3f7264c14ff0bae85726fb6",
+    "ircot_processed/extracted/processed_data/2wikimultihopqa/dev.jsonl": "c6e1d9faee2202f2c72b68e05ae75ef220329e73819635a1172838fa81f79055",
+    "ircot_processed/extracted/processed_data/hotpotqa/dev.jsonl": "501eb6e42c63bdbde6a05bf31b30593d3a25a7711e502208e42f4f65159fa96e",
+    "ircot_processed/extracted/processed_data/musique/dev.jsonl": "322874c95ffcff69087246eb4b4d2bc4a1f6cb1849d03d2bfa5edcf28e5d53b7",
+    "musique_raw/extracted/data/musique_ans_v1.0_dev.jsonl": "15fa63794d18a94ce12411aca6e2327e65b6e83b0b1490efab3f1962e48abf3b",
+    "nq_dev/biencoder-nq-dev.json.gz": "b583e78adcad00fbd4b421f691fac60e477c30a1b142fbcba1cf24b3a782f621",
+    "popqa/popqa_test.tsv": "9a5227f41bff0e4c331d4a774d946b12f95307892b58f860a9606ef356e6089b",
+    "trivia_dev/biencoder-trivia-dev.json.gz": "6b9cfc8b24a08c951b72b8e5fe01e9781d7fac4965cdf8624c87bcd5456ecd48"
+  },
+  "counts": {
+    "questions": 3000,
+    "splits": {
+      "train": 1800,
+      "dev": 600,
+      "test": 600
+    }
+  }
+}
