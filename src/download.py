@@ -12,6 +12,7 @@ import json
 import logging
 import shutil
 import tarfile
+import time
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -73,15 +74,34 @@ SOURCES = [
 ]
 
 
-def _http_download(url: str, dest: Path) -> None:
+def _http_download(url: str, dest: Path, expected: int, max_attempts: int = 20) -> None:
+    """Resumable download: on a dropped connection, continue from the .part file via HTTP Range."""
     tmp = dest.with_suffix(dest.suffix + ".part")
-    with requests.get(url, stream=True, timeout=60) as r:
-        r.raise_for_status()
-        total = int(r.headers.get("content-length", 0)) or None
-        with open(tmp, "wb") as f, tqdm(total=total, unit="B", unit_scale=True, desc=dest.name) as bar:
-            for chunk in r.iter_content(1 << 20):
-                f.write(chunk)
-                bar.update(len(chunk))
+    for attempt in range(1, max_attempts + 1):
+        have = tmp.stat().st_size if tmp.exists() else 0
+        if have == expected:
+            break
+        headers = {"Range": f"bytes={have}-"} if have else {}
+        try:
+            with requests.get(url, stream=True, timeout=60, headers=headers) as r:
+                r.raise_for_status()
+                if have and r.status_code != 206:
+                    log.warning("server ignored Range; restarting %s from 0", dest.name)
+                    have = 0
+                mode = "ab" if have else "wb"
+                with open(tmp, mode) as f, tqdm(total=expected, initial=have, unit="B",
+                                                unit_scale=True, desc=dest.name) as bar:
+                    for chunk in r.iter_content(1 << 20):
+                        f.write(chunk)
+                        bar.update(len(chunk))
+        except (requests.ConnectionError, requests.Timeout,
+                requests.exceptions.ChunkedEncodingError) as e:
+            wait = min(60, 2 ** attempt)
+            log.warning("%s: attempt %d failed at %d bytes (%s); retrying in %ds",
+                        dest.name, attempt, tmp.stat().st_size if tmp.exists() else 0, e, wait)
+            time.sleep(wait)
+    else:
+        raise RuntimeError(f"{dest.name}: gave up after {max_attempts} attempts")
     tmp.replace(dest)
 
 
@@ -145,7 +165,7 @@ def run(stage: int, yes_large: bool) -> None:
         if s.gdrive_id:
             _gdrive_download(s.gdrive_id, dest)
         else:
-            _http_download(s.url, dest)
+            _http_download(s.url, dest, s.size)
         size = dest.stat().st_size
         if size != s.size:
             log.warning("%s: size %d differs from expected %d", s.name, size, s.size)

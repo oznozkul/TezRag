@@ -1,0 +1,17 @@
+{
+  "name": "2wikimultihopqa",
+  "docs": 430225,
+  "expected_docs": 430225,
+  "empty_docs_skipped": 0,
+  "expected_indexed": 430225,
+  "matches_expected": true,
+  "index_bytes": 205655970,
+  "analyzer": "Lucene DefaultEnglishAnalyzer (Porter, English stopwords)",
+  "fields": [
+    "contents",
+    "title"
+  ],
+  "seconds": 13.2,
+  "threads": 8,
+  "heap": "6g"
+}

@@ -8,10 +8,14 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "configs" / "default.yaml"
+
+# OPENAI_API_KEY and JAVA_HOME come only from .env (git-ignored) or the environment.
+load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 SINGLE_HOP = {"nq", "triviaqa", "popqa"}
 MULTI_HOP = {"hotpotqa", "2wikimultihopqa", "musique"}

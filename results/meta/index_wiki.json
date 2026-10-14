@@ -1,0 +1,17 @@
+{
+  "name": "wiki",
+  "docs": 21015324,
+  "expected_docs": 21015324,
+  "empty_docs_skipped": 0,
+  "expected_indexed": 21015324,
+  "matches_expected": true,
+  "index_bytes": 11555141252,
+  "analyzer": "Lucene DefaultEnglishAnalyzer (Porter, English stopwords)",
+  "fields": [
+    "contents",
+    "title"
+  ],
+  "seconds": 268.3,
+  "threads": 8,
+  "heap": "6g"
+}

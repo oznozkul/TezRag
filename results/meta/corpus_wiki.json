@@ -1,0 +1,8 @@
+{
+  "name": "wiki",
+  "docs": 21015324,
+  "expected_docs": 21015324,
+  "matches_expected": true,
+  "shards": 22,
+  "seconds": 1599.9
+}

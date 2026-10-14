@@ -1,0 +1,8 @@
+{
+  "name": "2wikimultihopqa",
+  "docs": 430225,
+  "expected_docs": 430225,
+  "matches_expected": true,
+  "shards": 1,
+  "seconds": 8.1
+}

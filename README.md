@@ -20,7 +20,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 export JAVA_HOME=~/.local/jdk/jdk-21.0.12.1+1/Contents/Home
 
 uv sync                       # creates .venv from uv.lock (exact versions)
-cp .env.example .env          # put OPENAI_API_KEY (and JAVA_HOME) here; .env is git-ignored
+# create .env (git-ignored) with two lines:
+#   OPENAI_API_KEY=sk-...
+#   JAVA_HOME=/path/to/jdk-21
 uv run pytest                 # unit tests
 ```
 
@@ -35,6 +37,10 @@ to `runs/dryrun/` and never touch the real split or results.
 |---|---|---|
 | Download question sources (~1.5 GB, each file < 1 GB) | `uv run python -m src.download --stage 1` | `data/raw/`, `data/raw/MANIFEST.json` (sha256) |
 | Stage 1: sample + split | `uv run python -m src.prepare_data [--dry-run]` | `data/processed/questions.jsonl`, `data/splits/split.jsonl`, `data/processed/summary.md` |
+| Download corpora (6.2 GB; needs ≥ 60 GB free) | `uv run python -m src.download --stage 2 --yes-large` | `data/raw/` (resumable) |
+| Stage 2: corpus → shards | `uv run python -m src.build_corpus {wiki,hotpotqa,2wikimultihopqa,musique}` | `data/corpora/<name>/docs-*.jsonl` |
+| Stage 2: BM25 index | `uv run python -m src.build_index <name>` | `indexes/<name>/`, `results/meta/index_<name>.json` |
+| Stage 2: precompute retrieval | `uv run python -m src.retrieve [--dry-run]` | `cache/retrieval.sqlite`, `results/retrieval/retrieval.jsonl` |
 
 `data/splits/split.jsonl` is **write-once**: re-running `prepare_data` fails instead of overwriting it.
 Delete `data/processed/questions.jsonl` and `data/splits/{split.jsonl,manifest.json}` by hand to regenerate
@@ -101,6 +107,35 @@ Questions with at least one alias that accuracy ignores (from `data/processed/su
 | musique | 10 | 5 | 1 | 16 |
 | **total** | 81 | 29 | 22 | 132 |
 
+## Stage 2 — retrieval
+
+Sparse retrieval with BM25 via Pyserini 2.4.0 (Lucene / Anserini 2.3.0, JDK 21). Chosen over
+Elasticsearch (no ARM-macOS build of ES 7.10.2) and `bm25s` (in-memory indexing of 21M passages does not
+fit in 16 GB RAM). Lucene is the engine underneath Elasticsearch, so BM25 scoring is the same.
+
+Corpora — one index per dataset family, exactly as in IRCoT/Adaptive-RAG
+([src/build_corpus.py](src/build_corpus.py) mirrors their `retriever_server/build_index.py`):
+
+| Index | Used for | Source | Download | License | Docs (expected = ours) | Indexed | Convert | Index time | Index size |
+|---|---|---|---|---|---|---|---|---|---|
+| `wiki` | NQ, TriviaQA, PopQA | DPR `psgs_w100.tsv.gz` (Wikipedia 2018-12, 100-word passages) | 4.69 GB | CC BY-SA 3.0 | 21,015,324 | 21,015,324 | 26.7 min | 4.5 min | 11.56 GB |
+| `hotpotqa` | HotpotQA | `enwiki-20171001-pages-meta-current-withlinks-abstracts.tar.bz2` (first paragraphs) | 1.55 GB | CC BY-SA 4.0 | 5,233,329 | 5,233,235 (94 empty skipped) | 4.9 min | 0.7 min | 1.53 GB |
+| `2wikimultihopqa` | 2WikiMultihopQA | train+dev+test `context` paragraphs, dedup on title+text | 259 MB (zip) | Apache 2.0 | 430,225 | 430,225 | 0.1 min | 0.2 min | 0.21 GB |
+| `musique` | MuSiQue | ans+full train/dev/test `paragraphs`, dedup on title+text | 272 MB (zip) | CC BY 4.0 | 139,416 | 139,416 | 0.1 min | 0.1 min | 0.07 GB |
+
+Measured on an Apple M1 (8 cores, 16 GB RAM), 8 indexing threads, 6 GB JVM heap. HotpotQA: 94 abstracts in the 2017 dump have no text; Anserini skips empty documents, whereas Elasticsearch would index them by title only. They carry no text, so the effect on answers is nil; the index check expects 5,233,329 − 94.
+
+Retriever ([src/retrieval.py](src/retrieval.py)), matching Adaptive-RAG's one-step retrieval config
+(`oner_qa_*`: `retrieval_count: 5`, `document_type: title_paragraph_text`):
+- BM25 `k1=1.2, b=0.75` (Elasticsearch defaults).
+- The question is matched against the paragraph text **and** the title field, scores summed
+  (ES `query_title_field_too=True`, a `bool`/`should` of two `match` queries).
+- 100 candidates → dedup by stripped, lowercased paragraph text (as IRCoT) → top-k = 5.
+- Every query's `retrieval_ms` (search + stored-doc fetch + dedup) and passage ids are recorded.
+  Results are cached in SQLite, keyed by (corpus, index fingerprint, query, k, candidate k, k1, b);
+  a cache hit returns the originally measured latency with `cached=true`. The sequential latency run
+  bypasses the cache.
+
 ## Differences from Adaptive-RAG
 
 | Topic | Adaptive-RAG | Here | Why |
@@ -111,5 +146,19 @@ Questions with at least one alias that accuracy ignores (from `data/processed/su
 | Accuracy | normalized gold is a substring of the prediction | normalized gold occurs as whole tokens in the prediction; aliases ≤ 2 chars ignored (primary kept) | avoids false matches of short aliases (`ca` in `canada`, `in` in "born in") |
 | Gold answers | single primary answer | all variants (main report) + primary-only (comparison report) | see [Answer-variant policy](#answer-variant-policy) |
 | Unscorable / duplicate-text questions | kept | dropped before sampling (counts in `data/processed/summary.md`) | can never be scored correct; duplicate texts risk split leakage |
+| Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
+| Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |
+| Retrieval strategy | no / single-step / multi-step (IRCoT) | no retrieval and single-step only | multi-step retrieval is out of scope |
 
 (Retrieval, generation and evaluation differences are added as those stages are built.)
+
+## Limitations
+
+- **Always-RAG is single-step retrieval.** The question is sent to BM25 once and the top-k passages are
+  given to the model. Multi-step retrieval (IRCoT-style interleaving of retrieval and chain-of-thought,
+  Adaptive-RAG's third strategy) is out of scope. Multi-hop datasets (HotpotQA, 2Wiki, MuSiQue) are
+  therefore evaluated with a retrieval strategy that is known to be weaker for them; answer recall@5 on
+  MuSiQue is 0.20 (`results/meta/retrieval_summary.json`).
+- Sparse retrieval only (BM25); no dense retriever or reranker.
+- Corpus dates (Wikipedia 2017/2018) differ from the generator's knowledge cutoff (GPT-5 nano: May 2024);
+  some gold answers may be outdated relative to the model's knowledge.

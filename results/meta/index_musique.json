@@ -1,0 +1,17 @@
+{
+  "name": "musique",
+  "docs": 139416,
+  "expected_docs": 139416,
+  "empty_docs_skipped": 0,
+  "expected_indexed": 139416,
+  "matches_expected": true,
+  "index_bytes": 71957989,
+  "analyzer": "Lucene DefaultEnglishAnalyzer (Porter, English stopwords)",
+  "fields": [
+    "contents",
+    "title"
+  ],
+  "seconds": 5.2,
+  "threads": 8,
+  "heap": "6g"
+}

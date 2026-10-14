@@ -1,0 +1,17 @@
+{
+  "name": "hotpotqa",
+  "docs": 5233235,
+  "expected_docs": 5233329,
+  "empty_docs_skipped": 94,
+  "expected_indexed": 5233235,
+  "matches_expected": true,
+  "index_bytes": 1534956121,
+  "analyzer": "Lucene DefaultEnglishAnalyzer (Porter, English stopwords)",
+  "fields": [
+    "contents",
+    "title"
+  ],
+  "seconds": 41.0,
+  "threads": 8,
+  "heap": "6g"
+}

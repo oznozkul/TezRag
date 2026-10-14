@@ -1,0 +1,62 @@
+{
+  "2wikimultihopqa": {
+    "n": 500,
+    "corpus": "2wikimultihopqa",
+    "mean_ms": 5.69,
+    "p50_ms": 4.49,
+    "p95_ms": 11.83,
+    "short_results": 0,
+    "answer_recall@5": 0.45,
+    "from_cache": 500
+  },
+  "hotpotqa": {
+    "n": 500,
+    "corpus": "hotpotqa",
+    "mean_ms": 25.44,
+    "p50_ms": 23.39,
+    "p95_ms": 43.84,
+    "short_results": 0,
+    "answer_recall@5": 0.426,
+    "from_cache": 500
+  },
+  "musique": {
+    "n": 500,
+    "corpus": "musique",
+    "mean_ms": 4.02,
+    "p50_ms": 3.72,
+    "p95_ms": 5.25,
+    "short_results": 0,
+    "answer_recall@5": 0.2,
+    "from_cache": 500
+  },
+  "nq": {
+    "n": 500,
+    "corpus": "wiki",
+    "mean_ms": 39.09,
+    "p50_ms": 36.82,
+    "p95_ms": 68.98,
+    "short_results": 0,
+    "answer_recall@5": 0.512,
+    "from_cache": 500
+  },
+  "triviaqa": {
+    "n": 500,
+    "corpus": "wiki",
+    "mean_ms": 44.36,
+    "p50_ms": 38.84,
+    "p95_ms": 94.27,
+    "short_results": 0,
+    "answer_recall@5": 0.582,
+    "from_cache": 500
+  },
+  "popqa": {
+    "n": 500,
+    "corpus": "wiki",
+    "mean_ms": 19.59,
+    "p50_ms": 19.34,
+    "p95_ms": 30.64,
+    "short_results": 0,
+    "answer_recall@5": 0.434,
+    "from_cache": 500
+  }
+}

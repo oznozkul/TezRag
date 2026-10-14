@@ -1,0 +1,8 @@
+{
+  "name": "hotpotqa",
+  "docs": 5233329,
+  "expected_docs": 5233329,
+  "matches_expected": true,
+  "shards": 6,
+  "seconds": 295.3
+}
