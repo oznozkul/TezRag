@@ -1,0 +1,169 @@
+{
+  "model": "gpt-5-nano-2025-08-07",
+  "probed_at": "2026-10-14T10:40:41.704613+00:00",
+  "params": {
+    "reasoning_effort": {
+      "value": "minimal",
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 19,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 32
+        },
+        "output_text": "OK",
+        "model": "gpt-5-nano-2025-08-07"
+      }
+    },
+    "verbosity": {
+      "value": "low",
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 86,
+          "output_tokens_details": {
+            "reasoning_tokens": 64
+          },
+          "total_tokens": 99
+        },
+        "output_text": "OK",
+        "model": "gpt-5-nano-2025-08-07"
+      }
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 71,
+          "output_tokens_details": {
+            "reasoning_tokens": 64
+          },
+          "total_tokens": 84
+        },
+        "output_text": "OK",
+        "model": "gpt-5-nano-2025-08-07"
+      }
+    },
+    "temperature": {
+      "value": 0,
+      "accepted": false,
+      "error": "Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+      "response": null
+    },
+    "top_p": {
+      "value": 1,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 93,
+          "output_tokens_details": {
+            "reasoning_tokens": 64
+          },
+          "total_tokens": 106
+        },
+        "output_text": "OK",
+        "model": "gpt-5-nano-2025-08-07"
+      }
+    },
+    "seed": {
+      "value": 42,
+      "accepted": false,
+      "error": "Error code: 400 - {'error': {'message': \"Unknown parameter: 'seed'.\", 'type': 'invalid_request_error', 'param': 'seed', 'code': 'unknown_parameter'}}",
+      "response": null
+    },
+    "store": {
+      "value": false,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 89,
+          "output_tokens_details": {
+            "reasoning_tokens": 64
+          },
+          "total_tokens": 102
+        },
+        "output_text": "OK",
+        "model": "gpt-5-nano-2025-08-07"
+      }
+    }
+  },
+  "reasoning_effort_levels": {
+    "none": {
+      "accepted": false,
+      "error": "Error code: 400 - {'error': {'message': \"Unsupported value: 'none' is not supported with the 'gpt-5-nano-2025-08-07' model. Supported values are: 'minimal', 'low', 'medium', and 'high'.\", 'type': 'invalid_request_error', 'param': 'reasoning.effort', 'code': 'unsupported_value'}}",
+      "usage": null
+    },
+    "minimal": {
+      "accepted": true,
+      "error": null,
+      "usage": {
+        "input_tokens": 13,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 19,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 32
+      }
+    }
+  },
+  "bare_request": {
+    "status": "completed",
+    "usage": {
+      "input_tokens": 13,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 97,
+      "output_tokens_details": {
+        "reasoning_tokens": 64
+      },
+      "total_tokens": 110
+    },
+    "output_text": "OK",
+    "model": "gpt-5-nano-2025-08-07"
+  },
+  "lowest_reasoning_effort": "minimal"
+}

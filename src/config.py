@@ -76,10 +76,11 @@ class LLMCfg(_Strict):
 
 
 class PromptsCfg(_Strict):
-    system: str
     llm_only: str
     always_rag: str
+    llm_decision: str
     passage: str
+    passage_separator: str
 
 
 class RunnerCfg(_Strict):
@@ -114,6 +115,7 @@ class Config(_Strict):
     retrieval: RetrievalCfg
     llm: LLMCfg
     prompts: PromptsCfg
+    systems: list[Literal["llm_only", "always_rag", "llm_decision"]]
     runner: RunnerCfg
     latency: LatencyCfg
     eval: EvalCfg

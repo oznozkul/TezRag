@@ -1,0 +1,4 @@
+Answer the question with a short phrase only (a few words). Do not explain.
+
+Question: {question}
+Answer:

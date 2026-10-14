@@ -38,8 +38,13 @@ llm:
   api: responses
   # Requested generation params. Each is probed (python -m src.llm --probe);
   # unsupported ones are dropped with a WARNING and recorded in every output record.
+  # Mapping to the Responses API: reasoning_effort -> reasoning.effort, verbosity -> text.verbosity,
+  # seed -> extra_body (the Responses API has no seed field; the server decides).
+  # reasoning_effort: lowest level the model accepts, fixed after probing (see results/meta/param_probe.json).
+  # Probe 2026-10-14: 'none' rejected ("Supported values are: 'minimal', ..."); temperature and seed
+  # rejected, so they are dropped and logged per record.
   params:
-    reasoning_effort: minimal
+    reasoning_effort: minimal       # lowest level supported by gpt-5-nano-2025-08-07
     verbosity: low
     max_output_tokens: 256
     temperature: 0
@@ -48,11 +53,15 @@ llm:
     store: false
   timeout_s: 60
 
+# llm_only and always_rag templates differ only in the context block (checked by tests).
 prompts:
-  system: prompts/system.txt
   llm_only: prompts/llm_only.txt
   always_rag: prompts/always_rag.txt
+  llm_decision: prompts/llm_decision.txt
   passage: prompts/passage.txt
+  passage_separator: "\n\n"
+
+systems: [llm_only, always_rag, llm_decision]
 
 runner:
   concurrency: 8
@@ -66,7 +75,7 @@ latency:
   split: test
   n: 200
   concurrency: 1
-  warmup: 5
+  warmup: 5                       # throwaway retrieval queries per corpus before timing
 
 eval:
   correct_metric: accuracy        # one of: accuracy, em, f1

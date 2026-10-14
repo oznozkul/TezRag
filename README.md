@@ -41,6 +41,10 @@ to `runs/dryrun/` and never touch the real split or results.
 | Stage 2: corpus → shards | `uv run python -m src.build_corpus {wiki,hotpotqa,2wikimultihopqa,musique}` | `data/corpora/<name>/docs-*.jsonl` |
 | Stage 2: BM25 index | `uv run python -m src.build_index <name>` | `indexes/<name>/`, `results/meta/index_<name>.json` |
 | Stage 2: precompute retrieval | `uv run python -m src.retrieve [--dry-run]` | `cache/retrieval.sqlite`, `results/retrieval/retrieval.jsonl` |
+| Stage 3: probe model params (paid, ~10 tiny calls) | `uv run python -m src.llm --probe` | `results/meta/param_probe.json` |
+| Stage 3: runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines [--dry-run] [--system ...] [--yes]` | `results/raw/<system>.jsonl` |
+| Stage 3: sequential latency run (paid) | `uv run python -m src.run_baselines --latency --yes` | `results/latency/<system>.jsonl` |
+| Inspect runs | `uv run python -m src.inspect_runs [--dry-run]` | `results/summary/inspection.md` |
 
 `data/splits/split.jsonl` is **write-once**: re-running `prepare_data` fails instead of overwriting it.
 Delete `data/processed/questions.jsonl` and `data/splits/{split.jsonl,manifest.json}` by hand to regenerate
@@ -136,6 +140,63 @@ Retriever ([src/retrieval.py](src/retrieval.py)), matching Adaptive-RAG's one-st
   a cache hit returns the originally measured latency with `cached=true`. The sequential latency run
   bypasses the cache.
 
+## Stage 3 — model calls
+
+Model: `gpt-5-nano-2025-08-07` (pinned snapshot) via the OpenAI Responses API, `store=false`.
+API key only from `.env` (`OPENAI_API_KEY`).
+
+Three call types, each logged one line per call with the same schema ([src/run_baselines.py](src/run_baselines.py)):
+
+| system | prompt | notes |
+|---|---|---|
+| `llm_only` | [prompts/llm_only.txt](prompts/llm_only.txt) | question only |
+| `always_rag` | [prompts/always_rag.txt](prompts/always_rag.txt) | identical text plus a `Context:` block with the BM25 top-5 passages (`Wikipedia Title: …` format); a test enforces that this block is the only difference |
+| `llm_decision` | [prompts/llm_decision.txt](prompts/llm_decision.txt) | "Can you answer … without any external source? Answer only YES or NO." Exactly `yes`/`no` (case and punctuation ignored) is parsed; anything else is `invalid` and routed like NO (retrieve), counted separately |
+
+Generation parameters were probed against the API (2026-10-14, `results/meta/param_probe.json`):
+
+| parameter | requested | outcome |
+|---|---|---|
+| reasoning effort | `minimal` | accepted; `none` is rejected for this model ("Supported values are: 'minimal', …"), so `minimal` is the lowest level |
+| verbosity | `low` | accepted |
+| max_output_tokens | 256 | accepted |
+| top_p | 1 | accepted |
+| temperature | 0 | **rejected** ("not supported with this model") → dropped, listed in every record's `dropped_params` |
+| seed | 42 | **rejected** ("Unknown parameter") → dropped, listed in `dropped_params` |
+
+Without temperature or seed control the API is not guaranteed to be deterministic; each prediction is a
+single sample.
+
+Record fields: `qid, dataset, split, system, model, prompt_hash, input_tokens, output_tokens,
+reasoning_tokens, cached_input_tokens, retrieval_ms, llm_ms, total_ms, retrieved_ids, retrieved_scores,
+retrieval_cached, prediction, timestamp, error, error_kind`, provenance (`run_id, mode, config_hash,
+response_model, response_id, status, attempts, request_params, dropped_params, prompt`) and router
+fields (`router_name, router_decision, router_route, router_ms, router_input_tokens,
+router_output_tokens`; filled by `llm_decision`, reserved for learned routers).
+Token counts come only from the API's `usage`. `output_tokens` already includes `reasoning_tokens`
+(billed at the output price), so cost uses `output_tokens` and reasoning is not added twice.
+
+Resume: a (qid, system, model, prompt_hash) that already has a record with `error == null` is never
+called again; `prompt_hash` covers the model, the full rendered prompt and the parameters sent.
+Concurrency, RPM/TPM limits and exponential backoff with jitter come from the config; errors that
+persist are written to `error` / `error_kind`.
+
+Latency: the main runs are concurrent and use cached retrieval, so their timings are not used for
+latency claims. `--latency` runs a fixed test subset (200 questions, `random.Random("42:latency")`)
+sequentially (concurrency 1), with fresh retrieval right before each model call; P50/P95 come only
+from this run.
+
+### Observations (dry run, 144 calls)
+
+- **Fixed output overhead.** Every response is billed at least 19 output tokens with
+  `reasoning_tokens = 0`, even a one-word `NO`. The API does not attribute these ~18 tokens to
+  reasoning or visible text. They are included in cost (they are billed), and should be kept in mind
+  when comparing the cost of a short routing call with the context tokens it saves.
+- **Reasoning leakage into the answer.** With `minimal` effort the model occasionally writes its
+  deliberation into the answer text (1 of 48 `llm_only` answers in the dry run: "…Wait. There's 'The
+  Hat Museum'?…"). Decision: answers are left as they are (no post-processing); the leakage rate per
+  system is reported in Stage 4.
+
 ## Differences from Adaptive-RAG
 
 | Topic | Adaptive-RAG | Here | Why |
@@ -149,6 +210,8 @@ Retriever ([src/retrieval.py](src/retrieval.py)), matching Adaptive-RAG's one-st
 | Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
 | Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |
 | Retrieval strategy | no / single-step / multi-step (IRCoT) | no retrieval and single-step only | multi-step retrieval is out of scope |
+| Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), zero-shot, short-answer prompt, reasoning effort `minimal` | thesis design; cost-sensitive small model |
+| Router | trained T5 query-complexity classifier | none yet; oracle upper bound + the model's own YES/NO decision (`llm_decision`) | learned routers come later |
 
 (Retrieval, generation and evaluation differences are added as those stages are built.)
 
