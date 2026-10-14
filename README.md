@@ -176,10 +176,19 @@ router_output_tokens`; filled by `llm_decision`, reserved for learned routers).
 Token counts come only from the API's `usage`. `output_tokens` already includes `reasoning_tokens`
 (billed at the output price), so cost uses `output_tokens` and reasoning is not added twice.
 
-Resume: a (qid, system, model, prompt_hash) that already has a record with `error == null` is never
-called again; `prompt_hash` covers the model, the full rendered prompt and the parameters sent.
-Concurrency, RPM/TPM limits and exponential backoff with jitter come from the config; errors that
-persist are written to `error` / `error_kind`.
+Resume rule per (qid, system, model, prompt_hash) — `prompt_hash` covers the model, the full rendered
+prompt and the parameters sent. Failed records are never deleted from the log.
+
+| record state | next run |
+|---|---|
+| success | never called again |
+| `incomplete` (hit `max_output_tokens`), `permanent` (4xx), `no_usage` | never called again; counted as a wrong answer |
+| `transient_exhausted` (429/5xx/timeout after all backoff retries) | called again automatically |
+| `flagged` (OpenAI prompt filter: "flagged as potentially violating our usage policy") | called again only with `--retry-flagged`, at most once |
+
+A qid whose prompt was flagged twice for any system is removed from **all** systems' comparisons
+(evaluation runs on the common question set); removed qids are listed in the report.
+Concurrency, RPM/TPM limits and exponential backoff with jitter come from the config.
 
 Latency: the main runs are concurrent and use cached retrieval, so their timings are not used for
 latency claims. `--latency` runs a fixed test subset (200 questions, `random.Random("42:latency")`)
@@ -196,6 +205,15 @@ from this run.
   deliberation into the answer text (1 of 48 `llm_only` answers in the dry run: "…Wait. There's 'The
   Hat Museum'?…"). Decision: answers are left as they are (no post-processing); the leakage rate per
   system is reported in Stage 4.
+
+### Full run (2026-10-14)
+
+9,000 calls + 600 latency calls, $0.21 in total. Errors after the main run: 34 `flagged` (false positives
+on benign questions such as "Who is Titus Tarquinius's paternal grandfather?"; non-overlapping between
+systems, none for `llm_decision`) and 15 `incomplete` (answer turned into a deliberation that hit 256
+output tokens). One `--retry-flagged` pass recovered 27 of 34; 6 qids were flagged twice
+(TriviaQA 1, HotpotQA 4, MuSiQue 1) and are excluded from all comparisons; one MuSiQue qid was
+flagged, then `incomplete` on retry, and is counted as wrong.
 
 ## Differences from Adaptive-RAG
 

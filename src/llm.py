@@ -64,9 +64,17 @@ class LLMResult:
     response_model: str | None = None
     status: str | None = None
     error: str | None = None
-    error_kind: str | None = None        # transient_exhausted | permanent | incomplete | no_usage
+    error_kind: str | None = None  # transient_exhausted | flagged | permanent | incomplete | no_usage
     attempts: int = 0
     raw_usage: dict = field(default_factory=dict)
+
+
+FLAGGED_MARKER = "flagged as potentially violating our usage policy"
+
+
+def is_flagged_message(error: str | None) -> bool:
+    """OpenAI's prompt safety filter (observed as false positives on benign questions)."""
+    return bool(error) and FLAGGED_MARKER in error
 
 
 def _client():
@@ -118,8 +126,8 @@ class LLMClient:
                     await asyncio.sleep(wait)
                     continue
                 except openai.APIStatusError as e:
-                    res.error, res.error_kind = f"{type(e).__name__} {e.status_code}: {e.message}", \
-                        "permanent"
+                    res.error = f"{type(e).__name__} {e.status_code}: {e.message}"
+                    res.error_kind = "flagged" if is_flagged_message(res.error) else "permanent"
                     return res
                 res.llm_ms = (time.perf_counter_ns() - t0) / 1e6
                 break

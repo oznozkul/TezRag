@@ -5,8 +5,13 @@
     python -m src.run_baselines --latency --yes                 # sequential latency run on the test subset
 
 Records go to results/raw/<system>.jsonl (latency: results/latency/<system>.jsonl), one line per call,
-appended and fsynced as they arrive. Resume: a (qid, system, model, prompt_hash) that already has a
-record with error == null is not called again.
+appended and fsynced as they arrive; failed records are never removed.
+
+Resume rule, per (qid, system, model, prompt_hash):
+  - success, `incomplete`, `permanent` or `no_usage`  -> never called again
+  - `transient_exhausted` (429/5xx/timeouts after all retries) -> called again on the next run
+  - `flagged` (OpenAI prompt filter)  -> called again only with --retry-flagged, and only once
+    (a key with two flagged records is final; evaluation then drops that qid for all systems)
 
 Normal runs take retrieval from the cache built by `src.retrieve` (retrieval_ms is the originally
 measured value, retrieval_cached=true) and run calls concurrently. The latency run is sequential
@@ -20,13 +25,14 @@ import json
 import logging
 import random
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
 from src.config import Config, load_config
 from src.data import load_questions
 from src.io_utils import append_jsonl, read_jsonl, setup_logging, sha256_text
-from src.llm import LLMClient, LLMResult, load_sent_params
+from src.llm import LLMClient, LLMResult, is_flagged_message, load_sent_params
 from src.retrieval import BM25Retriever
 from src.retrieve import warmup
 from src.systems import SYSTEMS, USES_RETRIEVAL, build_prompt, parse_decision, route_for
@@ -45,11 +51,33 @@ def out_path(cfg: Config, system: str, dry_run: bool, latency: bool) -> Path:
     return cfg.path("results", dry_run) / ("latency" if latency else "raw") / f"{system}.jsonl"
 
 
-def done_keys(path: Path) -> set[tuple]:
+FINAL_ERROR_KINDS = {"incomplete", "permanent", "no_usage"}
+MAX_FLAGGED_ATTEMPTS = 2   # first call + one --retry-flagged
+
+
+def error_kind(r: dict) -> str | None:
+    """Error kind of a record; records written before `flagged` existed are classified by message."""
+    if r.get("error") is None:
+        return None
+    return "flagged" if is_flagged_message(r["error"]) else r.get("error_kind")
+
+
+def done_keys(path: Path, retry_flagged: bool = False) -> set[tuple]:
+    """Keys that must not be called again under the resume rule above."""
     if not path.exists():
         return set()
-    return {(r["qid"], r["system"], r["model"], r["prompt_hash"])
-            for r in read_jsonl(path) if r.get("error") is None}
+    done, flagged = set(), Counter()
+    for r in read_jsonl(path):
+        key = (r["qid"], r["system"], r["model"], r["prompt_hash"])
+        kind = error_kind(r)
+        if kind is None or kind in FINAL_ERROR_KINDS:
+            done.add(key)
+        elif kind == "flagged":
+            flagged[key] += 1
+    for key, n in flagged.items():
+        if not retry_flagged or n >= MAX_FLAGGED_ATTEMPTS:
+            done.add(key)
+    return done
 
 
 def latency_subset(cfg: Config, questions: list[dict], dry_run: bool) -> list[dict]:
@@ -102,11 +130,13 @@ def estimate_cost(cfg: Config, prompts: list[str]) -> float:
 
 async def run_system(cfg: Config, system: str, questions: list[dict], *, dry_run: bool,
                      latency: bool, retriever: BM25Retriever | None, sent: dict, dropped: dict,
-                     run_id: str, yes: bool) -> None:
+                     run_id: str, yes: bool, retry_flagged: bool = False) -> None:
     path = out_path(cfg, system, dry_run, latency)
     path.parent.mkdir(parents=True, exist_ok=True)
-    done = done_keys(path)
+    done = done_keys(path, retry_flagged)
     mode = "latency" if latency else ("dry_run" if dry_run else "full")
+    if retry_flagged:
+        mode += "_retry_flagged"
 
     if latency:
         if USES_RETRIEVAL[system]:
@@ -175,6 +205,8 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--latency", action="store_true")
     ap.add_argument("--yes", action="store_true", help="confirm a paid full/latency run")
+    ap.add_argument("--retry-flagged", action="store_true",
+                    help="call again (once) the prompts rejected by OpenAI's prompt filter")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -196,7 +228,7 @@ def main() -> None:
         for s in systems:
             await run_system(cfg, s, questions, dry_run=args.dry_run, latency=args.latency,
                              retriever=retriever, sent=sent, dropped=dropped, run_id=run_id,
-                             yes=args.yes)
+                             yes=args.yes, retry_flagged=args.retry_flagged)
 
     asyncio.run(run_all())
 
