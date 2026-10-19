@@ -103,7 +103,7 @@ class EvalCfg(_Strict):
     correct_metric: Literal["accuracy", "em", "f1"]
     f1_threshold: float
     accuracy_min_alias_chars: int = Field(ge=0)
-    answer_sets: list[Literal["all", "primary_only"]]
+    answer_sets: list[Literal["all", "adaptive_rag"]]
     bootstrap_samples: int = Field(ge=1000)
     ci: float
 

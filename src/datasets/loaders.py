@@ -11,7 +11,9 @@ Pools match Adaptive-RAG (Jeong et al., 2024):
 Answer variants:
   IRCoT's processed files keep only one gold span, so aliases are joined from raw files:
   2Wiki: id_aliases.json aliases + demonyms of answer_id (as in the official 2Wiki evaluator);
-  MuSiQue: answer_aliases. `answers_primary` keeps the single IRCoT/DPR primary answer.
+  MuSiQue: answer_aliases. `answers_primary` is the first listed answer: the single IRCoT span for
+  multi-hop datasets; for NQ/TriviaQA/PopQA only the first entry of the source list (arbitrary alias
+  order in TriviaQA). Adaptive-RAG scores NQ/TriviaQA against the full DPR list.
 """
 from __future__ import annotations
 

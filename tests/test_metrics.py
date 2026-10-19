@@ -77,6 +77,20 @@ def test_short_primary_is_kept():
     assert score("the US", ["US"], ["US"], min_alias_chars=3)["accuracy"] == 1.0
 
 
-def test_primary_only_answer_set():
-    # report (c): golds = primary only
+def test_single_gold_answer_set():
+    # comparison report for multi-hop datasets: golds = the single IRCoT answer
     assert score("Helicopters", ["Helicopter"], ["Helicopter"], 3)["accuracy"] == 0.0
+
+
+def test_adaptive_rag_gold_set():
+    from src.config import load_config
+    from src.evaluate import golds_for
+
+    cfg = load_config()
+    tq = {"dataset": "triviaqa", "answers": ["Titfer", "Hat", "Hats"], "answers_primary": ["Titfer"]}
+    hp = {"dataset": "hotpotqa", "answers": ["yes"], "answers_primary": ["yes"]}
+    wk = {"dataset": "2wikimultihopqa", "answers": ["Norwegian", "no"], "answers_primary": ["Norwegian"]}
+    assert golds_for(cfg, tq, "adaptive_rag") == (["Titfer", "Hat", "Hats"], None, 0)
+    assert golds_for(cfg, hp, "adaptive_rag") == (["yes"], None, 0)
+    assert golds_for(cfg, wk, "adaptive_rag") == (["Norwegian"], None, 0)
+    assert golds_for(cfg, wk, "all") == (["Norwegian", "no"], ["Norwegian"], 3)

@@ -45,6 +45,16 @@ to `runs/dryrun/` and never touch the real split or results.
 | Stage 3: runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines [--dry-run] [--system ...] [--yes]` | `results/raw/<system>.jsonl` |
 | Stage 3: sequential latency run (paid) | `uv run python -m src.run_baselines --latency --yes` | `results/latency/<system>.jsonl` |
 | Inspect runs | `uv run python -m src.inspect_runs [--dry-run]` | `results/summary/inspection.md` |
+| Stage 4: evaluation + report | `uv run python -m src.evaluate [--dry-run]` | `results/summary/*.csv`, `results/summary/summary.md` |
+
+End-to-end dry run (8 questions per dataset, ≈ $0.003, never touches the real split or results):
+
+```bash
+uv run python -m src.prepare_data --dry-run
+uv run python -m src.retrieve --dry-run
+uv run python -m src.run_baselines --dry-run
+uv run python -m src.evaluate --dry-run      # -> runs/dryrun/results/summary/summary.md
+```
 
 `data/splits/split.jsonl` is **write-once**: re-running `prepare_data` fails instead of overwriting it.
 Delete `data/processed/questions.jsonl` and `data/splits/{split.jsonl,manifest.json}` by hand to regenerate
@@ -56,7 +66,9 @@ All settings live in [configs/default.yaml](configs/default.yaml). Seed: 42.
 
 Common format (`data/processed/questions.jsonl`):
 `qid`, `dataset`, `question`, `answers` (all valid variants), `hop_type` (single/multi), plus
-`answers_primary` (the single answer Adaptive-RAG/IRCoT scores against), `source_id`, `source_file`.
+`answers_primary` (first listed answer: the single IRCoT answer for HotpotQA/2Wiki/MuSiQue; for
+NQ/TriviaQA/PopQA just the first entry of the source list, which for TriviaQA is an arbitrary alias),
+`source_id`, `source_file`.
 Split assignment is in `data/splits/split.jsonl` (`qid`, `dataset`, `split`).
 
 Only questions and gold answers are used. Ready-made contexts (DPR positive/negative passages,
@@ -96,8 +108,15 @@ Policy (`eval.accuracy_min_alias_chars: 3` in the config):
 - **EM and F1** score against every answer variant (max over variants).
 - **Accuracy** ignores aliases whose normalized form has ≤ 2 characters. The primary answer is always kept,
   even when short (e.g. `US`).
-- An additional report scores everything against the **primary answer only** (`answers_primary`), which is
-  what Adaptive-RAG/IRCoT score against (`eval.answer_sets: [all, primary_only]`).
+- An additional report scores the base systems against **Adaptive-RAG's own gold answers**, without the
+  short-alias filter (`eval.answer_sets: [all, adaptive_rag]`): NQ and TriviaQA the full DPR answer list
+  (Adaptive-RAG's `process_nq.py` / `process_trivia.py` store all DPR answers as spans), HotpotQA/2Wiki/
+  MuSiQue the single IRCoT answer, PopQA (not in Adaptive-RAG) all `possible_answers` as in its original
+  evaluation.
+
+  Correction (2026-10-14): this report was first specified as "primary answer only". That matches
+  Adaptive-RAG for the multi-hop datasets but not for NQ/TriviaQA, where Adaptive-RAG uses the whole
+  list and the first TriviaQA entry is an arbitrary alias (e.g. `Titfer` for "hat"), so it was replaced.
 
 Questions with at least one alias that accuracy ignores (from `data/processed/summary.md`):
 
@@ -215,6 +234,35 @@ output tokens). One `--retry-flagged` pass recovered 27 of 34; 6 qids were flagg
 (TriviaQA 1, HotpotQA 4, MuSiQue 1) and are excluded from all comparisons; one MuSiQue qid was
 flagged, then `incomplete` on retry, and is counted as wrong.
 
+## Stage 4 — evaluation
+
+[src/evaluate.py](src/evaluate.py) writes `results/summary/` (report: [summary.md](results/summary/summary.md)).
+
+- **Final record** per (qid, system): last successful call, else last call. Failed calls (`incomplete`,
+  permanent errors) count as wrong; their billed tokens still count as cost.
+- **Common question set**: a qid whose prompt was rejected by the filter twice in any system is removed
+  from all systems (`excluded_qids.csv`).
+- **Metrics**: SQuAD-normalized EM, F1, accuracy (token-bounded containment), max over gold variants;
+  "correct" = `eval.correct_metric` (default accuracy). Two answer sets: `all` (main) and `adaptive_rag`
+  (comparison, see [Answer-variant policy](#answer-variant-policy)).
+- **Outcome labels** (`question_labels.jsonl`, `labels.csv`): `both_ok`, `rag_hurts`, `retrieval_needed`,
+  `both_fail` (`no_retrieval_ok` = both_ok + rag_hurts), per dataset and split.
+- **Composed systems** ([src/routers/](src/routers/__init__.py)), no extra API calls:
+  `oracle` (llm_only if correct, else always_rag; both wrong → llm_only) and `llm_decision_router`
+  (YES → llm_only, NO/invalid → always_rag; decision call charged as router cost).
+- **Cost** per component (`retrieval_usd` = 0 for local BM25, `generation_usd`, `router_usd`), prices
+  and their date from the config.
+- **Decision analysis**: YES/NO/invalid, agreement with the oracle route, confusion matrix,
+  P(llm_only correct | YES).
+- **Break-even**: decision cost vs. context tokens and money saved on skipped retrievals, and the skip
+  rate the router would need to break even.
+- **Latency**: sequential run only; adaptive = decision call + chosen path, compared with Always-RAG and
+  LLM-only (paired bootstrap on mean and median).
+- **Bootstrap**: 10,000 paired resamples over questions, stratified by dataset for pooled rows, 95%
+  percentile CIs for accuracy and cost per 1,000 questions.
+- **Reasoning leakage** ([src/leakage.py](src/leakage.py)): `incomplete`, ≥ 17 words, or a deliberation
+  marker; reported per criterion.
+
 ## Differences from Adaptive-RAG
 
 | Topic | Adaptive-RAG | Here | Why |
@@ -223,7 +271,7 @@ flagged, then `incomplete` on retry, and is counted as wrong.
 | Sampling | 500 test per dataset, seed 13370, + separate dev sample | 500 per dataset from the same pools, seed 42, split 300/100/100 | One fixed sample with train/dev for future routers |
 | Answer variants (2Wiki, MuSiQue) | IRCoT keeps one gold span | gold + aliases (`answers`); primary kept in `answers_primary` | Task requires all valid variants |
 | Accuracy | normalized gold is a substring of the prediction | normalized gold occurs as whole tokens in the prediction; aliases ≤ 2 chars ignored (primary kept) | avoids false matches of short aliases (`ca` in `canada`, `in` in "born in") |
-| Gold answers | single primary answer | all variants (main report) + primary-only (comparison report) | see [Answer-variant policy](#answer-variant-policy) |
+| Gold answers | NQ/TriviaQA: full DPR list; multi-hop: single IRCoT answer | all variants with short-alias filter for accuracy (main report) + Adaptive-RAG's gold set (comparison report) | see [Answer-variant policy](#answer-variant-policy) |
 | Unscorable / duplicate-text questions | kept | dropped before sampling (counts in `data/processed/summary.md`) | can never be scored correct; duplicate texts risk split leakage |
 | Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
 | Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |

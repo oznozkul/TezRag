@@ -81,7 +81,9 @@ eval:
   correct_metric: accuracy        # one of: accuracy, em, f1
   f1_threshold: 0.5               # only used when correct_metric == f1
   accuracy_min_alias_chars: 3     # accuracy ignores aliases of <= 2 normalized chars (primary always kept)
-  answer_sets: [all, primary_only]  # first = main report; primary_only = Adaptive-RAG comparison
+  # first = main report; adaptive_rag = the gold set Adaptive-RAG/IRCoT score against
+  # (NQ/TriviaQA: full DPR answer list; multi-hop: the single IRCoT span; PopQA: all possible_answers)
+  answer_sets: [all, adaptive_rag]
   bootstrap_samples: 10000
   ci: 0.95
 

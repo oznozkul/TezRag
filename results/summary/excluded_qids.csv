@@ -1,0 +1,7 @@
+qid,dataset,split,flagged_in,calls
+hotpotqa__5a7fd7305542992e7d278dc2,hotpotqa,dev,llm_only,llm_only:2
+hotpotqa__5a870a8e55429960ec39b707,hotpotqa,train,always_rag,always_rag:2
+hotpotqa__5adddf5d5542997dc7907078,hotpotqa,train,always_rag,always_rag:2
+hotpotqa__5ae617285542996de7b71b4c,hotpotqa,train,always_rag,always_rag:2
+musique__2hop__42027_42004,musique,test,llm_only,llm_only:2
+triviaqa__dev_8240,triviaqa,train,llm_only,llm_only:2
