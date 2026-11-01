@@ -1,0 +1,19 @@
+# Overlay on configs/default.yaml. Claude Haiku 5.5 is the small Claude model.
+# Thinking is on unless the request disables it. disabled is accepted at effort
+# high or below; low is the cheapest level. Prices are in default.yaml.
+
+llm:
+  provider: anthropic
+  model: claude-haiku-5-5
+  api: messages
+  params:
+    # temperature is rejected: "deprecated for this model" (probe 2026-11-01).
+    max_output_tokens: 256
+    effort: low
+    thinking: disabled
+  timeout_s: 60
+
+runner:
+  concurrency: 2
+  rpm: 30
+  tpm: 200000

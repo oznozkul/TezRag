@@ -94,6 +94,7 @@ def path_row(cfg: Config, rec: dict, sc: dict, uses_retrieval: bool) -> dict:
     return {**{k: sc[k] for k in ("em", "f1", "accuracy", "correct")},
             "input_tokens": rec.get("input_tokens") or 0, "output_tokens": rec.get("output_tokens") or 0,
             "reasoning_tokens": rec.get("reasoning_tokens") or 0,
+            "llm_ms": float(rec.get("llm_ms") or 0), "router_ms": 0.0,
             "generation_usd": call_usd(cfg, rec), "retrieval_calls": int(uses_retrieval),
             "retrieval_usd": retrieval_usd(cfg, int(uses_retrieval)),
             "router_usd": 0.0, "router_input_tokens": 0, "router_output_tokens": 0,
@@ -111,7 +112,8 @@ def build_rows(cfg: Config, questions: dict, recs: dict, answer_set: str) -> lis
         d_route = "llm_only" if decision == "yes" else "always_rag"
         router = {"router_usd": call_usd(cfg, dec), "router_input_tokens": dec.get("input_tokens") or 0,
                   "router_output_tokens": dec.get("output_tokens") or 0,
-                  "router_reasoning_tokens": dec.get("reasoning_tokens") or 0}
+                  "router_reasoning_tokens": dec.get("reasoning_tokens") or 0,
+                  "router_ms": float(dec.get("llm_ms") or 0)}
         meta = {"qid": qid, "dataset": q["dataset"], "split": q["split"], "answer_set": answer_set,
                 "label": outcome_label(lo_s["correct"], ar_s["correct"]),
                 "oracle_route": o_route, "decision": decision, "decision_route": d_route}
@@ -121,6 +123,9 @@ def build_rows(cfg: Config, questions: dict, recs: dict, answer_set: str) -> lis
                          "llm_decision_router": d_route}.get(s, s), **base})
     for r in rows:
         r["total_usd"] = r["generation_usd"] + r["retrieval_usd"] + r["router_usd"]
+        r["billed_input_tokens"] = (r.get("input_tokens") or 0) + (r.get("router_input_tokens") or 0)
+        r["billed_output_tokens"] = (r.get("output_tokens") or 0) + (r.get("router_output_tokens") or 0)
+        r["response_ms"] = (r.get("llm_ms") or 0) + (r.get("router_ms") or 0)
     return rows
 
 

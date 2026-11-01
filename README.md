@@ -24,6 +24,7 @@ uv sync                       # creates .venv from uv.lock (exact versions)
 #   OPENAI_API_KEY=sk-...
 #   GEMINI_API_KEY=...
 #   DEEPSEEK_API_KEY=...
+#   ANTHROPIC_API_KEY=...
 #   JAVA_HOME=/path/to/jdk-21
 uv run pytest                 # unit tests
 ```
@@ -49,12 +50,15 @@ to `runs/dryrun/` and never touch the real split or results.
 | Inspect runs | `uv run python -m src.inspect_runs [--dry-run]` | `results/summary/inspection.md` |
 | Question attributes (no model calls) | `uv run python -m src.question_meta` | `data/processed/question_meta.jsonl` (write-once) |
 | Stage 4: evaluation + report | `uv run python -m src.evaluate [--dry-run]` | `results/summary/*.csv`, `results/summary/summary.md` |
-| Gemini probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/gemini.yaml` | `results/models/gemini-2.5-flash-lite/meta/param_probe.json` |
-| Gemini runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemini.yaml [--dry-run] [--yes]` | `results/models/gemini-2.5-flash-lite/raw/` |
+| Gemini probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/gemini.yaml` | `results/models/gemini-3.5-flash-lite/meta/param_probe.json` |
+| Gemini runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemini.yaml [--dry-run] [--yes]` | `results/models/gemini-3.5-flash-lite/raw/` |
 | DeepSeek probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/deepseek.yaml` | `results/models/deepseek-flash/meta/param_probe.json` |
 | DeepSeek runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/deepseek.yaml [--dry-run] [--yes]` | `results/models/deepseek-flash/raw/` |
+| Claude Haiku 5.5 probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/claude.yaml` | `results/models/claude-haiku-5-5/meta/param_probe.json` |
+| Claude Haiku 5.5 runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/claude.yaml [--dry-run] [--yes]` | `results/models/claude-haiku-5-5/raw/` |
 | Qwen3.5-4B (local Ollama; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/qwen.yaml [--dry-run] [--yes]` | `results/models/qwen3.5-4b/raw/` |
 | Gemma 4 E2B (local Ollama; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemma.yaml [--dry-run] [--yes]` | `results/models/gemma4-e2b/raw/` |
+| Llama 3.2 3B (local Ollama; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/llama.yaml [--dry-run] [--yes]` | `results/models/llama3.2-3b/raw/` |
 
 End-to-end dry run (8 questions per dataset, ≈ $0.003, never touches the real split or results):
 
@@ -289,11 +293,11 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   outcome labels (`both_fail`, `rag_hurts`, and the rest) stay outcomes. The nano report states where
   these cuts move accuracy and whether the decision router beats Always-RAG inside them.
 
-Gemini 2.5 Flash-Lite uses the same prompts, the same BM25 cache, and the same three call types.
-`thinking_budget` is 0. Prices are the standard paid text tier on the Gemini pricing page
-(retrieved 2026-10-24): $0.10/1M input, $0.01/1M cached input, $0.40/1M output, thinking tokens included
-in the output price. Its logs are `results/models/gemini-2.5-flash-lite/`. The key probed on 2026-10-24 is on the
-free tier: 20 generateContent requests per day for this model, so the 3,000-question run needs
+Gemini 3.5 Flash-Lite uses the same prompts, the same BM25 cache, and the same three call types.
+`gemini-2.5-flash-lite` is closed to new keys. This model rejects `thinking_budget`; its default
+thinking level is minimal, and thinking tokens are billed as output. Prices are the standard paid
+text tier on the Gemini pricing page (retrieved 2026-11-01): $0.30/1M input, $0.03/1M cached input,
+$2.50/1M output. Its logs are `results/models/gemini-3.5-flash-lite/`. The 3,000-question run needs
 billing on that Google project. Re-run `src.evaluate` after
 that run; the report adds paired accuracy and cost by the attributes above when both models are complete.
 There is no Gemini latency run.
@@ -304,11 +308,21 @@ turned off (`reasoning_effort: none`). Off-peak prices, retrieved 2026-10-24: $0
 input, $0.003/1M cache-hit input, $0.60/1M output. Weekday peak hours (01:00-04:00 and 06:00-10:00 UTC)
 are double. Logs go to `results/models/deepseek-flash/`.
 
+Claude Haiku 5.5 (`claude-haiku-5-5`) is the small Claude model, on the same prompts and the
+same three call types. Thinking is on unless the request disables it. The run sends
+`thinking: disabled` at `effort: low`, which the API accepts at high effort or below.
+Prompts here are under 100k tokens, so the short-prompt price applies (pricing page,
+retrieved 2026-11-01): $0.10/1M input, $0.01/1M cache read, $0.50/1M output. Logs go to
+`results/models/claude-haiku-5-5/`. The key is `ANTHROPIC_API_KEY`.
+
 Qwen and Gemma run locally through Ollama, on the same prompts and the same three call types.
 The machine has 16 GB of memory, so the nano-sized builds are `qwen3.5:4b` (Qwen3.5-4B, Q4_K_M,
-about 3.4 GB; `think` off) and `gemma4:e2b` (Gemma 4 E2B, 2.3B effective parameters). The larger
-small-tier builds, Qwen3.5-9B and Gemma 4 E4B, do not leave room beside the OS. Their API price
-is 0. One call at a time. Logs go to `results/models/qwen3.5-4b/` and `results/models/gemma4-e2b/`.
+about 3.4 GB; `think` off), `gemma4:e2b` (Gemma 4 E2B, 2.3B effective parameters), and
+`llama3.2:3b` (Llama 3.2 3B instruct, Q4_K_M, about 2 GB). The larger small-tier builds,
+Qwen3.5-9B and Gemma 4 E4B, do not leave room beside the OS. Their API price is 0. The report
+still shows input tokens, output tokens, and response time next to the dollar cost, so a local
+model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go to
+`results/models/qwen3.5-4b/`, `results/models/gemma4-e2b/`, and `results/models/llama3.2-3b/`.
 
 ## Differences from Adaptive-RAG
 
@@ -323,7 +337,7 @@ is 0. One call at a time. Logs go to `results/models/qwen3.5-4b/` and `results/m
 | Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
 | Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |
 | Retrieval strategy | no / single-step / multi-step (IRCoT) | no retrieval and single-step only | multi-step retrieval is out of scope |
-| Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), and separately Gemini 2.5 Flash-Lite (`gemini-2.5-flash-lite`, thinking budget 0); zero-shot, short-answer prompt | thesis design; cost-sensitive small models. Gemini logs live under `results/models/` and do not mix with the nano logs |
+| Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), and separately Gemini 3.5 Flash-Lite (`gemini-3.5-flash-lite`, default minimal thinking); zero-shot, short-answer prompt | thesis design; cost-sensitive small models. Gemini logs live under `results/models/` and do not mix with the nano logs |
 | Router | trained T5 query-complexity classifier | none yet; oracle upper bound + the model's own YES/NO decision (`llm_decision`) | learned routers come later |
 
 (Retrieval, generation and evaluation differences are added as those stages are built.)

@@ -66,6 +66,8 @@ def test_build_rows_composes_routers():
     assert dr2["route"] == "always_rag" and dr2["retrieval_calls"] == 1
     assert dr1["router_usd"] == pytest.approx(call_usd(CFG, recs["llm_decision"]["q1"]))
     assert dr1["total_usd"] == pytest.approx(dr1["generation_usd"] + dr1["router_usd"])
+    assert dr1["billed_input_tokens"] == 80 and dr1["billed_output_tokens"] == 39
+    assert dr1["response_ms"] == 0
 
 
 def test_leak_flags():

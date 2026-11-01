@@ -5,6 +5,7 @@ import pytest
 
 from src.config import load_config
 from src.dispatch import dispatch_rows
+from src.llm_anthropic import parse_message, request_kwargs
 from src.llm_gemini import tokens_from_gemini_usage
 from src.llm_ollama import parse_chat, request_body
 from src.paths import out_path
@@ -47,14 +48,32 @@ def test_tokens_with_no_thoughts_match_either_rule():
 def test_gemini_overlay_replaces_params_and_keeps_datasets():
     cfg = load_config("configs/gemini.yaml")
     assert cfg.llm.provider == "gemini"
-    assert cfg.llm.model == "gemini-2.5-flash-lite"
+    assert cfg.llm.model == "gemini-3.5-flash-lite"
     assert cfg.llm.api == "generate_content"
     assert "reasoning_effort" not in cfg.llm.params
-    assert cfg.llm.params["thinking_budget"] == 0
+    assert "thinking_budget" not in cfg.llm.params
     assert cfg.data.datasets == CFG.data.datasets
     assert cfg.pricing[NANO]["input_per_1m"] == CFG.pricing[NANO]["input_per_1m"]
-    assert cfg.pricing["gemini-2.5-flash-lite"]["output_per_1m"] == 0.40
-    assert cfg.pricing["gemini-2.5-flash-lite"]["input_per_1m"] == 0.10
+    assert cfg.pricing["gemini-3.5-flash-lite"]["output_per_1m"] == 2.50
+    assert cfg.pricing["gemini-3.5-flash-lite"]["input_per_1m"] == 0.30
+
+
+def test_claude_overlay_disables_thinking_and_prices_the_short_prompt_tier():
+    cfg = load_config("configs/claude.yaml")
+    assert cfg.llm.provider == "anthropic" and cfg.llm.api == "messages"
+    assert cfg.llm.model == "claude-haiku-5-5"
+    assert cfg.llm.params["thinking"] == "disabled" and cfg.llm.params["effort"] == "low"
+    assert cfg.pricing["claude-haiku-5-5"]["input_per_1m"] == 0.10
+    assert cfg.pricing["claude-haiku-5-5"]["output_per_1m"] == 0.50
+    kw = request_kwargs(cfg.llm.params)
+    assert kw["thinking"] == {"type": "disabled"} and kw["output_config"] == {"effort": "low"}
+    assert kw["max_tokens"] == 256
+    usage = {"input_tokens": 8, "output_tokens": 1, "cache_read_input_tokens": 2,
+             "cache_creation_input_tokens": 0}
+    got = parse_message([{"type": "text", "text": "OK"}], usage, "end_turn")
+    assert got["input_tokens"] == 10 and got["cached_input_tokens"] == 2 and got["error"] is None
+    thinking = parse_message([{"type": "thinking"}, {"type": "text", "text": "OK"}], usage, "end_turn")
+    assert thinking["error_kind"] == "thinking"
 
 
 def test_deepseek_peak_hour_doubles_the_off_peak_price():
@@ -74,7 +93,7 @@ def test_gemini_logs_are_not_written_next_to_openai(tmp_path):
         update={"paths": CFG.paths.model_copy(update={"results": str(tmp_path)})})
     assert out_path(nano, "llm_only", False, False) == tmp_path / "raw" / "llm_only.jsonl"
     assert out_path(gem, "llm_only", False, False) == (
-        tmp_path / "models" / "gemini-2.5-flash-lite" / "raw" / "llm_only.jsonl")
+        tmp_path / "models" / "gemini-3.5-flash-lite" / "raw" / "llm_only.jsonl")
     ds = load_config("configs/deepseek.yaml").model_copy(
         update={"paths": CFG.paths.model_copy(update={"results": str(tmp_path)})})
     assert ds.llm.model == "deepseek-flash" and ds.llm.params["reasoning_effort"] == "none"
@@ -110,7 +129,7 @@ def test_gemini_run_uses_its_own_directory(tmp_path, monkeypatch):
     qs = [{"qid": "q1", "dataset": "nq", "split": "test", "question": "fine"}]
     asyncio.run(run_system(cfg, "llm_only", qs, dry_run=False, latency=False, retriever=None,
                            sent={}, dropped={}, run_id="t", yes=True))
-    path = tmp_path / "models" / "gemini-2.5-flash-lite" / "raw" / "llm_only.jsonl"
+    path = tmp_path / "models" / "gemini-3.5-flash-lite" / "raw" / "llm_only.jsonl"
     assert path.exists()
     assert not (tmp_path / "raw" / "llm_only.jsonl").exists()
 

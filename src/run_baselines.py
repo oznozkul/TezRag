@@ -56,6 +56,9 @@ def open_client(cfg: Config, sent: dict, concurrency: int | None = None):
     if cfg.llm.provider == "ollama":
         from src.llm_ollama import OllamaClient
         return OllamaClient(cfg, sent, concurrency)
+    if cfg.llm.provider == "anthropic":
+        from src.llm_anthropic import AnthropicClient
+        return AnthropicClient(cfg, sent, concurrency)
     return LLMClient(cfg, sent, concurrency)
 
 

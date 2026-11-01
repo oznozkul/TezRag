@@ -118,7 +118,9 @@ class GeminiClient:
         self.config = config_for(sent_params)
         self.client = _client(cfg)
         self.sem = asyncio.Semaphore(concurrency or cfg.runner.concurrency)
-        self.rpm = AsyncLimiter(cfg.runner.rpm, 60)
+        # One slot per interval. AsyncLimiter(rpm, 60) starts with a full bucket and
+        # would send the whole minute's allowance at once, which trips the free-tier cap.
+        self.rpm = AsyncLimiter(1, 60 / cfg.runner.rpm)
         self.tpm = AsyncLimiter(cfg.runner.tpm, 60)
 
     async def aclose(self) -> None:

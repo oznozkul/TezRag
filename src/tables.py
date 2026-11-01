@@ -25,6 +25,7 @@ def aggregate(df: pd.DataFrame) -> pd.DataFrame:
                     "mean_input_tokens": (g.input_tokens + g.router_input_tokens).mean(),
                     "mean_output_tokens": (g.output_tokens + g.router_output_tokens).mean(),
                     "mean_reasoning_tokens": (g.reasoning_tokens + g.router_reasoning_tokens).mean(),
+                    "mean_response_ms": g.response_ms.mean(),
                     "usd_per_q": g.total_usd.mean(), "generation_usd_per_q": g.generation_usd.mean(),
                     "router_usd_per_q": g.router_usd.mean(), "retrieval_usd_per_q": g.retrieval_usd.mean(),
                     "retrieval_calls": int(g.retrieval_calls.sum()),

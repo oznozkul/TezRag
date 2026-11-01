@@ -71,9 +71,12 @@ def report(cfg, dry_run, all_q, questions, excl_df, metrics, labels, decision, b
     cols = [("dataset", "dataset", None), ("system", "system", None), ("n", "n", None), ("em", "EM", 3),
             ("f1", "F1", 3), ("accuracy", "Acc", 3), ("mean_input_tokens", "in tok", 1),
             ("mean_output_tokens", "out tok", 1), ("mean_reasoning_tokens", "reas tok", 2),
+            ("mean_response_ms", "resp ms", 0),
             ("usd_per_q", "$/q", 7), ("retrieval_calls", "retr calls", None), ("failed_calls", "failed", None)]
     L += ["## Main results (all splits)", "",
-          "Tokens and cost include the router call for `llm_decision_router`. Failed calls count as wrong.", "",
+          "Tokens, response time, and dollar cost include the router call for `llm_decision_router`. "
+          "Response time is the logged model-call time. Local weights have a dollar cost of 0; "
+          "tokens and response time are what stay comparable. Failed calls count as wrong.", "",
           md_table(main_tab("all", main_set), cols), "",
           "## Test split only", "", md_table(main_tab("test", main_set)[lambda x: x.dataset == "ALL"], cols), ""]
 

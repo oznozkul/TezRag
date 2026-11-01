@@ -97,11 +97,29 @@ pricing:
   gemini-2.5-flash-lite:
     # Standard paid tier, text. Output price includes thinking tokens.
     # https://ai.google.dev/gemini-api/docs/pricing (page retrieved 2026-10-24).
+    # Kept so logs from the closed model can still be costed.
     input_per_1m: 0.10
     cached_input_per_1m: 0.01
     output_per_1m: 0.40
     source: https://ai.google.dev/gemini-api/docs/pricing
     retrieved: "2026-10-24"
+  claude-haiku-5-5:
+    # Short-prompt tier (prompts at or under 100k tokens). Output price includes thinking.
+    # https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-11-01.
+    input_per_1m: 0.10
+    cached_input_per_1m: 0.01
+    output_per_1m: 0.50
+    source: https://platform.claude.com/docs/en/about-claude/pricing
+    retrieved: "2026-11-01"
+    note: prompts under 100k tokens; cache read is the cached-input price
+  gemini-3.5-flash-lite:
+    # Standard paid tier, text. Output price includes thinking tokens.
+    # https://ai.google.dev/gemini-api/docs/pricing (page retrieved 2026-11-01).
+    input_per_1m: 0.30
+    cached_input_per_1m: 0.03
+    output_per_1m: 2.50
+    source: https://ai.google.dev/gemini-api/docs/pricing
+    retrieved: "2026-11-01"
   deepseek-flash:
     # Off-peak cache-miss / cache-hit / output. Peak hours are double (peak_multiplier).
     # https://api-docs.deepseek.com/quick_start/pricing retrieved 2026-10-24.
@@ -118,6 +136,13 @@ pricing:
     source: https://ollama.com/library/qwen3.5:4b
     retrieved: "2026-11-01"
     note: local Q4_K_M weights via Ollama; no API charge
+  llama3.2-3b:
+    input_per_1m: 0
+    cached_input_per_1m: 0
+    output_per_1m: 0
+    source: https://ollama.com/library/llama3.2:3b
+    retrieved: "2026-11-01"
+    note: local Llama 3.2 3B instruct Q4_K_M via Ollama; no API charge
   gemma4-e2b:
     input_per_1m: 0
     cached_input_per_1m: 0

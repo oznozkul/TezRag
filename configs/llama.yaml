@@ -1,0 +1,19 @@
+# Overlay on configs/default.yaml. Llama 3.2 3B instruct is the small Llama in the same
+# class as Qwen3.5-4B and Gemma 4 E2B. Ollama tag llama3.2:3b is Q4_K_M, about 2 GB.
+# Price is 0. This model has no thinking mode.
+
+llm:
+  provider: ollama
+  model: llama3.2-3b
+  ollama_tag: llama3.2:3b
+  api: chat
+  params:
+    temperature: 0
+    max_output_tokens: 256
+    seed: 42
+  timeout_s: 180
+
+runner:
+  concurrency: 1
+  rpm: 600
+  tpm: 200000

@@ -232,6 +232,9 @@ def main() -> None:
     elif cfg.llm.provider == "ollama":
         from src.llm_ollama import probe as ollama_probe
         out = asyncio.run(ollama_probe(cfg))
+    elif cfg.llm.provider == "anthropic":
+        from src.llm_anthropic import probe as anthropic_probe
+        out = asyncio.run(anthropic_probe(cfg))
     else:
         out = asyncio.run(probe(cfg))
     write_json(probe_path(cfg), out)

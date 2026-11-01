@@ -53,6 +53,12 @@ def _subset(df: pd.DataFrame, spec: dict) -> pd.DataFrame:
     return d
 
 
+def _mean(s: pd.DataFrame, column: str) -> float:
+    if column not in s.columns:
+        return float("nan")
+    return float(s[column].mean())
+
+
 def stratum_table(df: pd.DataFrame, model: str, cfg: Config) -> pd.DataFrame:
     """df: one answer set, already joined with question_meta, one row per question per system."""
     rows = []
@@ -74,6 +80,9 @@ def stratum_table(df: pd.DataFrame, model: str, cfg: Config) -> pd.DataFrame:
                     "note": spec["note"], "system": system, "n": len(s),
                     "em": float(s.em.mean()), "f1": float(s.f1.mean()),
                     "accuracy": acc, "acc_ci_lo": acc_lo, "acc_ci_hi": acc_hi,
+                    "input_tokens": _mean(s, "billed_input_tokens"),
+                    "output_tokens": _mean(s, "billed_output_tokens"),
+                    "response_ms": _mean(s, "response_ms"),
                     "usd_per_q": usd, "usd_ci_lo": usd_lo, "usd_ci_hi": usd_hi,
                 })
     return pd.DataFrame(rows)
@@ -117,6 +126,12 @@ def compare_table(frames: dict[str, pd.DataFrame], cfg: Config) -> pd.DataFrame:
                             "n": len(la),
                             "accuracy_a": float(la.correct.mean()), "accuracy_b": float(lb.correct.mean()),
                             "acc_diff": acc[0], "acc_ci_lo": acc[1], "acc_ci_hi": acc[2],
+                            "input_tokens_a": _mean(la, "billed_input_tokens"),
+                            "input_tokens_b": _mean(lb, "billed_input_tokens"),
+                            "output_tokens_a": _mean(la, "billed_output_tokens"),
+                            "output_tokens_b": _mean(lb, "billed_output_tokens"),
+                            "response_ms_a": _mean(la, "response_ms"),
+                            "response_ms_b": _mean(lb, "response_ms"),
                             "usd_per_q_a": float(la.total_usd.mean()),
                             "usd_per_q_b": float(lb.total_usd.mean()),
                             "usd_diff": usd[0], "usd_ci_lo": usd[1], "usd_ci_hi": usd[2],
@@ -199,12 +214,15 @@ def stratum_markdown(strata: pd.DataFrame, compare: pd.DataFrame) -> str:
     lines = ["## Accuracy and cost by source attribute", "",
              "Cuts are the attributes the source datasets define. They are not one difficulty scale, "
              "and they are not model outcomes. NQ and TriviaQA have no source difficulty field; they "
-             "appear only under `hop_type`. Intervals are percentile bootstrap CIs of the mean. "
+             "appear only under `hop_type`. Input tokens, output tokens, and response time include the "
+             "router call. Dollar cost is 0 for local weights; tokens and response time are the "
+             "comparable cost. Intervals are percentile bootstrap CIs of the mean. "
              "Full tables: `strata.csv`"
              + (", `model_compare.csv`." if not compare.empty else ".")]
     show = [("stratum_value", "value", None), ("system", "system", None), ("n", "n", None),
             ("accuracy", "Acc", 3), ("acc_ci_lo", "CI lo", 3), ("acc_ci_hi", "CI hi", 3),
-            ("usd_per_q", "$/q", 7)]
+            ("input_tokens", "in tok", 1), ("output_tokens", "out tok", 1),
+            ("response_ms", "resp ms", 0), ("usd_per_q", "$/q", 7)]
     for model, g in strata.groupby("model", sort=True):
         lines += ["", f"### {model}", ""]
         for spec in SPECS:
@@ -220,6 +238,10 @@ def stratum_markdown(strata: pd.DataFrame, compare: pd.DataFrame) -> str:
                   "Same questions, same route. A positive accuracy difference means A is higher.", ""]
         cols = [("stratum", "stratum", None), ("stratum_value", "value", None), ("system", "system", None),
                 ("n", "n", None), ("acc_diff", "acc A-B", 3), ("acc_ci_lo", "CI lo", 3),
-                ("acc_ci_hi", "CI hi", 3), ("usd_diff", "$/q A-B", 7)]
+                ("acc_ci_hi", "CI hi", 3),
+                ("input_tokens_a", "in A", 1), ("input_tokens_b", "in B", 1),
+                ("output_tokens_a", "out A", 1), ("output_tokens_b", "out B", 1),
+                ("response_ms_a", "ms A", 0), ("response_ms_b", "ms B", 0),
+                ("usd_diff", "$/q A-B", 7)]
         lines += [md_table(compare, cols), ""]
     return "\n".join(lines)
