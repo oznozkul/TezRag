@@ -1,0 +1,20 @@
+# Overlay on configs/default.yaml. Gemma 4 E2B is the edge model (2.3B effective parameters).
+# E4B's Ollama quant is about 9.6 GB and does not leave room on this 16 GB machine.
+# Price is 0. think: false is sent and dropped if this build rejects it.
+
+llm:
+  provider: ollama
+  model: gemma4-e2b
+  ollama_tag: gemma4:e2b
+  api: chat
+  params:
+    temperature: 0
+    max_output_tokens: 256
+    seed: 42
+    think: false
+  timeout_s: 180
+
+runner:
+  concurrency: 1
+  rpm: 600
+  tpm: 200000

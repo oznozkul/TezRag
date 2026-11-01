@@ -68,17 +68,21 @@ class RetrievalCfg(_Strict):
 
 
 class LLMCfg(_Strict):
-    provider: Literal["openai", "gemini", "deepseek"]
+    provider: Literal["openai", "gemini", "deepseek", "ollama"]
     model: str
-    api: Literal["responses", "generate_content"]
+    api: Literal["responses", "generate_content", "chat"]
+    ollama_tag: str | None = None
     params: dict[str, Any]
     timeout_s: float
 
     @model_validator(mode="after")
     def _api(self) -> "LLMCfg":
-        expected = {"openai": "responses", "gemini": "generate_content", "deepseek": "responses"}[self.provider]
+        expected = {"openai": "responses", "gemini": "generate_content", "deepseek": "responses",
+                    "ollama": "chat"}[self.provider]
         if self.api != expected:
             raise ValueError(f"{self.provider} uses api {expected!r}, not {self.api!r}")
+        if self.provider == "ollama" and not self.ollama_tag:
+            raise ValueError("ollama requires ollama_tag")
         return self
 
 

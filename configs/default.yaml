@@ -111,6 +111,20 @@ pricing:
     peak_multiplier: 2
     source: https://api-docs.deepseek.com/quick_start/pricing
     retrieved: "2026-10-24"
+  qwen3.5-4b:
+    input_per_1m: 0
+    cached_input_per_1m: 0
+    output_per_1m: 0
+    source: https://ollama.com/library/qwen3.5:4b
+    retrieved: "2026-11-01"
+    note: local Q4_K_M weights via Ollama; no API charge
+  gemma4-e2b:
+    input_per_1m: 0
+    cached_input_per_1m: 0
+    output_per_1m: 0
+    source: https://ollama.com/library/gemma4:e2b
+    retrieved: "2026-11-01"
+    note: local Gemma 4 E2B weights via Ollama; no API charge
   retrieval_bm25:
     per_call_usd: 0.0
     note: local Pyserini BM25; reported as call count and latency, monetary cost 0

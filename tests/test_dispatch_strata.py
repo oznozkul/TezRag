@@ -6,6 +6,7 @@ import pytest
 from src.config import load_config
 from src.dispatch import dispatch_rows
 from src.llm_gemini import tokens_from_gemini_usage
+from src.llm_ollama import parse_chat, request_body
 from src.paths import out_path
 from src.run_baselines import run_system
 from src.strata import compare_table, stratum_table, with_meta
@@ -80,6 +81,26 @@ def test_gemini_logs_are_not_written_next_to_openai(tmp_path):
     assert "verbosity" not in ds.llm.params
     assert out_path(ds, "llm_only", False, False) == (
         tmp_path / "models" / "deepseek-flash" / "raw" / "llm_only.jsonl")
+    qwen = load_config("configs/qwen.yaml")
+    assert qwen.llm.provider == "ollama" and qwen.llm.ollama_tag == "qwen3.5:4b"
+    assert qwen.llm.params["think"] is False
+    assert qwen.pricing["qwen3.5-4b"]["output_per_1m"] == 0
+    assert out_path(qwen, "llm_only", False, False).parts[-3:] == (
+        "qwen3.5-4b", "raw", "llm_only.jsonl")
+
+
+def test_ollama_parse_rejects_a_thinking_trace_and_keeps_length_tokens():
+    text, usage, kind = parse_chat({
+        "message": {"content": "OK", "thinking": "step"},
+        "prompt_eval_count": 4, "eval_count": 8, "done_reason": "stop"})
+    assert kind == "thinking" and usage is None and text == "OK"
+    text, usage, kind = parse_chat({
+        "message": {"content": "Paris"},
+        "prompt_eval_count": 10, "eval_count": 2, "done_reason": "length"})
+    assert kind == "incomplete" and usage["output_tokens"] == 2 and text == "Paris"
+    body = request_body("qwen3.5:4b", "hi", {"temperature": 0, "max_output_tokens": 256, "think": False})
+    assert body["think"] is False and body["options"]["num_predict"] == 256
+    assert body["messages"] == [{"role": "user", "content": "hi"}]
 
 
 def test_gemini_run_uses_its_own_directory(tmp_path, monkeypatch):

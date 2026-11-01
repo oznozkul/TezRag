@@ -1,0 +1,20 @@
+# Overlay on configs/default.yaml. Qwen3.5-4B is the current small Qwen that fits a 16 GB
+# machine (Ollama Q4_K_M, about 3.4 GB). The 9B does not. Small-series reasoning is off by
+# default; think: false keeps a reasoning trace out of the answer. Price is 0.
+
+llm:
+  provider: ollama
+  model: qwen3.5-4b
+  ollama_tag: qwen3.5:4b
+  api: chat
+  params:
+    temperature: 0
+    max_output_tokens: 256
+    seed: 42
+    think: false
+  timeout_s: 180
+
+runner:
+  concurrency: 1
+  rpm: 600
+  tpm: 200000

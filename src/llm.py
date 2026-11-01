@@ -229,6 +229,9 @@ def main() -> None:
     if cfg.llm.provider == "gemini":
         from src.llm_gemini import probe as gemini_probe
         out = asyncio.run(gemini_probe(cfg))
+    elif cfg.llm.provider == "ollama":
+        from src.llm_ollama import probe as ollama_probe
+        out = asyncio.run(ollama_probe(cfg))
     else:
         out = asyncio.run(probe(cfg))
     write_json(probe_path(cfg), out)

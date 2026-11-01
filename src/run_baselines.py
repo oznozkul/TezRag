@@ -53,6 +53,9 @@ def open_client(cfg: Config, sent: dict, concurrency: int | None = None):
     if cfg.llm.provider == "gemini":
         from src.llm_gemini import GeminiClient
         return GeminiClient(cfg, sent, concurrency)
+    if cfg.llm.provider == "ollama":
+        from src.llm_ollama import OllamaClient
+        return OllamaClient(cfg, sent, concurrency)
     return LLMClient(cfg, sent, concurrency)
 
 

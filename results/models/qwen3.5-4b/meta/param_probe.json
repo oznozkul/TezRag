@@ -1,0 +1,83 @@
+{
+  "model": "qwen3.5-4b",
+  "ollama_tag": "qwen3.5:4b",
+  "probed_at": "2026-11-01T15:03:43.545348+00:00",
+  "params": {
+    "temperature": {
+      "value": 0,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 19,
+          "cached_input_tokens": 16,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "qwen3.5:4b"
+      }
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 19,
+          "cached_input_tokens": 16,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "qwen3.5:4b"
+      }
+    },
+    "seed": {
+      "value": 42,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 19,
+          "cached_input_tokens": 16,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "qwen3.5:4b"
+      }
+    },
+    "think": {
+      "value": false,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 19,
+          "cached_input_tokens": 16,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "qwen3.5:4b"
+      }
+    }
+  },
+  "reasoning_effort_levels": {},
+  "bare_request": {
+    "done_reason": "stop",
+    "usage": {
+      "input_tokens": 19,
+      "cached_input_tokens": 16,
+      "output_tokens": 1,
+      "reasoning_tokens": 0
+    },
+    "output_text": "OK",
+    "model": "qwen3.5:4b"
+  }
+}

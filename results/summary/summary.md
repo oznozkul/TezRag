@@ -213,11 +213,102 @@ Per dataset: `leakage.csv`.
 
 Sent means a call was logged. Both paths call the model; `route` on `llm_decision` is which path that call selected (`llm_only` or `always_rag`). A question rejected by the filter twice stays sent and leaves `in_comparison`. Source attributes on the same rows are in `dispatch.csv`.
 
+- `deepseek-flash`: 3000/3000 questions have an `llm_only` call; 3000 are in the comparison set.
 - `gpt-5-nano-2025-08-07`: 3000/3000 questions have an `llm_only` call; 2994 are in the comparison set.
 
 ## Accuracy and cost by source attribute
 
-Cuts are the attributes the source datasets define. They are not one difficulty scale, and they are not model outcomes. NQ and TriviaQA have no source difficulty field; they appear only under `hop_type`. Intervals are percentile bootstrap CIs of the mean. Full tables: `strata.csv`.
+Cuts are the attributes the source datasets define. They are not one difficulty scale, and they are not model outcomes. NQ and TriviaQA have no source difficulty field; they appear only under `hop_type`. Intervals are percentile bootstrap CIs of the mean. Full tables: `strata.csv`, `model_compare.csv`.
+
+### deepseek-flash
+
+**hop_type.** single vs multi; the only cut defined for every question
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| multi | llm_only | 1500 | 0.293 | 0.270 | 0.315 | 0.0000088 |
+| multi | always_rag | 1500 | 0.374 | 0.350 | 0.399 | 0.0000891 |
+| multi | oracle | 1500 | 0.441 | 0.416 | 0.466 | 0.0000207 |
+| multi | llm_decision_router | 1500 | 0.363 | 0.339 | 0.388 | 0.0000852 |
+| single | llm_only | 1500 | 0.580 | 0.555 | 0.605 | 0.0000076 |
+| single | always_rag | 1500 | 0.568 | 0.543 | 0.593 | 0.0001151 |
+| single | oracle | 1500 | 0.679 | 0.655 | 0.703 | 0.0000186 |
+| single | llm_decision_router | 1500 | 0.575 | 0.550 | 0.601 | 0.0000906 |
+
+**pop_tertile.** thirds of log10(s_pop) on the frozen PopQA sample; low is least popular. Not a difficulty ranking.
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| high | llm_only | 167 | 0.647 | 0.575 | 0.719 | 0.0000068 |
+| high | always_rag | 167 | 0.491 | 0.413 | 0.569 | 0.0001103 |
+| high | oracle | 167 | 0.701 | 0.629 | 0.766 | 0.0000129 |
+| high | llm_decision_router | 167 | 0.503 | 0.425 | 0.581 | 0.0000945 |
+| low | llm_only | 167 | 0.371 | 0.299 | 0.449 | 0.0000072 |
+| low | always_rag | 167 | 0.461 | 0.383 | 0.533 | 0.0001127 |
+| low | oracle | 167 | 0.545 | 0.467 | 0.623 | 0.0000271 |
+| low | llm_decision_router | 167 | 0.461 | 0.383 | 0.533 | 0.0001106 |
+| mid | llm_only | 166 | 0.392 | 0.319 | 0.464 | 0.0000070 |
+| mid | always_rag | 166 | 0.386 | 0.313 | 0.458 | 0.0001137 |
+| mid | oracle | 166 | 0.512 | 0.440 | 0.584 | 0.0000206 |
+| mid | llm_decision_router | 166 | 0.392 | 0.319 | 0.464 | 0.0001064 |
+
+**musique_hops.** hop count from the MuSiQue id; subtypes such as 3hop1 and 4hop2 collapse to 3 and 4
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| 2 | llm_only | 251 | 0.151 | 0.108 | 0.195 | 0.0000083 |
+| 2 | always_rag | 251 | 0.227 | 0.175 | 0.279 | 0.0000952 |
+| 2 | oracle | 251 | 0.299 | 0.243 | 0.355 | 0.0000208 |
+| 2 | llm_decision_router | 251 | 0.215 | 0.167 | 0.267 | 0.0000956 |
+| 3 | llm_only | 155 | 0.110 | 0.065 | 0.161 | 0.0000095 |
+| 3 | always_rag | 155 | 0.123 | 0.071 | 0.181 | 0.0001003 |
+| 3 | oracle | 155 | 0.181 | 0.123 | 0.245 | 0.0000157 |
+| 3 | llm_decision_router | 155 | 0.123 | 0.071 | 0.181 | 0.0001071 |
+| 4 | llm_only | 94 | 0.043 | 0.011 | 0.085 | 0.0000102 |
+| 4 | always_rag | 94 | 0.085 | 0.032 | 0.149 | 0.0000980 |
+| 4 | oracle | 94 | 0.085 | 0.032 | 0.149 | 0.0000133 |
+| 4 | llm_decision_router | 94 | 0.085 | 0.032 | 0.149 | 0.0001066 |
+
+**hotpot_type.** HotpotQA level is hard for every question in this sample; type is not a difficulty rank
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| bridge | llm_only | 395 | 0.271 | 0.228 | 0.314 | 0.0000090 |
+| bridge | always_rag | 395 | 0.365 | 0.319 | 0.413 | 0.0000691 |
+| bridge | oracle | 395 | 0.456 | 0.408 | 0.506 | 0.0000200 |
+| bridge | llm_decision_router | 395 | 0.352 | 0.306 | 0.400 | 0.0000648 |
+| comparison | llm_only | 105 | 0.705 | 0.619 | 0.790 | 0.0000077 |
+| comparison | always_rag | 105 | 0.733 | 0.648 | 0.819 | 0.0000645 |
+| comparison | oracle | 105 | 0.752 | 0.667 | 0.829 | 0.0000098 |
+| comparison | llm_decision_router | 105 | 0.705 | 0.619 | 0.790 | 0.0000409 |
+
+**wiki_type.** 2Wiki reasoning type, not a difficulty rank
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| bridge_comparison | llm_only | 96 | 0.573 | 0.469 | 0.677 | 0.0000094 |
+| bridge_comparison | always_rag | 96 | 0.677 | 0.583 | 0.771 | 0.0000810 |
+| bridge_comparison | oracle | 96 | 0.802 | 0.719 | 0.875 | 0.0000268 |
+| bridge_comparison | llm_decision_router | 96 | 0.656 | 0.562 | 0.750 | 0.0000631 |
+| comparison | llm_only | 137 | 0.752 | 0.679 | 0.825 | 0.0000088 |
+| comparison | always_rag | 137 | 0.883 | 0.832 | 0.934 | 0.0000863 |
+| comparison | oracle | 137 | 0.942 | 0.898 | 0.978 | 0.0000245 |
+| comparison | llm_decision_router | 137 | 0.854 | 0.796 | 0.912 | 0.0000672 |
+| compositional | llm_only | 205 | 0.146 | 0.102 | 0.195 | 0.0000077 |
+| compositional | always_rag | 205 | 0.263 | 0.205 | 0.322 | 0.0001139 |
+| compositional | oracle | 205 | 0.302 | 0.239 | 0.366 | 0.0000250 |
+| compositional | llm_decision_router | 205 | 0.254 | 0.195 | 0.312 | 0.0001180 |
+| inference | llm_only | 62 | 0.177 | 0.081 | 0.274 | 0.0000104 |
+| inference | always_rag | 62 | 0.258 | 0.161 | 0.371 | 0.0001294 |
+| inference | oracle | 62 | 0.371 | 0.258 | 0.500 | 0.0000345 |
+| inference | llm_decision_router | 62 | 0.290 | 0.177 | 0.403 | 0.0001256 |
+
+**Taken into account.** These cuts stay separate. No easy/medium/hard label is assigned: HotpotQA's official level is hard on every question in this sample, NQ and TriviaQA publish none, PopQA's tertiles are popularity, and 2Wiki's type is a reasoning type. Outcome labels are not treated as difficulty.
+
+On the point estimate, the decision router is above Always-RAG only on: hop_type=single +0.007 (n=1500; intervals overlap), pop_tertile=high +0.012 (n=167; intervals overlap), pop_tertile=mid +0.006 (n=166; intervals overlap), wiki_type=inference +0.032 (n=62; intervals overlap). The largest gap elsewhere is wiki_type=comparison -0.029 (n=137; intervals overlap).
+
+Where retrieval itself moves accuracy: PopQA least popular: Always-RAG 0.461 against llm-only 0.371 (n=167); PopQA most popular: Always-RAG 0.491 against llm-only 0.647 (n=167); MuSiQue 4-hop: Always-RAG 0.085 against llm-only 0.043 (n=94).
+
 
 ### gpt-5-nano-2025-08-07
 
@@ -302,5 +393,72 @@ Cuts are the attributes the source datasets define. They are not one difficulty 
 | inference | oracle | 62 | 0.258 | 0.161 | 0.371 | 0.0000236 |
 | inference | llm_decision_router | 62 | 0.226 | 0.129 | 0.339 | 0.0000636 |
 
-One model is in the results directory, so there is no cross-model comparison.
+**Taken into account.** These cuts stay separate. No easy/medium/hard label is assigned: HotpotQA's official level is hard on every question in this sample, NQ and TriviaQA publish none, PopQA's tertiles are popularity, and 2Wiki's type is a reasoning type. Outcome labels are not treated as difficulty.
+
+On the point estimate, the decision router is above Always-RAG only on: musique_hops=4 +0.021 (n=94; intervals overlap). The largest gap elsewhere is wiki_type=comparison -0.051 (n=137; intervals overlap).
+
+Where retrieval itself moves accuracy: PopQA least popular: Always-RAG 0.431 against llm-only 0.210 (n=167); PopQA most popular: Always-RAG 0.449 against llm-only 0.443 (n=167); MuSiQue 4-hop: Always-RAG 0.011 against llm-only 0.064 (n=94).
+
+### Paired model difference (A − B)
+
+Same questions, same route. A positive accuracy difference means A is higher.
+
+| stratum | value | system | n | acc A-B | CI lo | CI hi | $/q A-B |
+|---|---|---|---|---|---|---|---|
+| hop_type | multi | llm_only | 1495 | -0.092 | -0.114 | -0.071 | 0.0000038 |
+| hop_type | multi | always_rag | 1495 | -0.074 | -0.094 | -0.052 | -0.0000498 |
+| hop_type | multi | oracle | 1495 | -0.079 | -0.101 | -0.057 | -0.0000038 |
+| hop_type | multi | llm_decision_router | 1495 | -0.082 | -0.104 | -0.060 | -0.0000406 |
+| hop_type | single | llm_only | 1499 | -0.162 | -0.185 | -0.139 | 0.0000043 |
+| hop_type | single | always_rag | 1499 | -0.063 | -0.082 | -0.044 | -0.0000678 |
+| hop_type | single | oracle | 1499 | -0.087 | -0.107 | -0.067 | -0.0000003 |
+| hop_type | single | llm_decision_router | 1499 | -0.073 | -0.093 | -0.053 | -0.0000380 |
+| pop_tertile | high | llm_only | 167 | -0.204 | -0.275 | -0.132 | 0.0000049 |
+| pop_tertile | high | always_rag | 167 | -0.042 | -0.090 | 0.006 | -0.0000638 |
+| pop_tertile | high | oracle | 167 | -0.120 | -0.186 | -0.054 | 0.0000038 |
+| pop_tertile | high | llm_decision_router | 167 | -0.054 | -0.108 | 0.000 | -0.0000411 |
+| pop_tertile | low | llm_only | 167 | -0.162 | -0.234 | -0.090 | 0.0000041 |
+| pop_tertile | low | always_rag | 167 | -0.030 | -0.072 | 0.006 | -0.0000652 |
+| pop_tertile | low | oracle | 167 | -0.078 | -0.132 | -0.024 | -0.0000059 |
+| pop_tertile | low | llm_decision_router | 167 | -0.030 | -0.072 | 0.006 | -0.0000540 |
+| pop_tertile | mid | llm_only | 166 | -0.163 | -0.229 | -0.096 | 0.0000043 |
+| pop_tertile | mid | always_rag | 166 | -0.006 | -0.030 | 0.018 | -0.0000667 |
+| pop_tertile | mid | oracle | 166 | -0.066 | -0.114 | -0.018 | -0.0000013 |
+| pop_tertile | mid | llm_decision_router | 166 | -0.018 | -0.054 | 0.018 | -0.0000517 |
+| musique_hops | 2.0 | llm_only | 250 | -0.056 | -0.104 | -0.012 | 0.0000050 |
+| musique_hops | 2.0 | always_rag | 250 | -0.064 | -0.116 | -0.012 | -0.0000536 |
+| musique_hops | 2.0 | oracle | 250 | -0.076 | -0.132 | -0.020 | -0.0000044 |
+| musique_hops | 2.0 | llm_decision_router | 250 | -0.056 | -0.108 | -0.004 | -0.0000482 |
+| musique_hops | 3.0 | llm_only | 155 | -0.045 | -0.097 | 0.000 | 0.0000032 |
+| musique_hops | 3.0 | always_rag | 155 | -0.026 | -0.071 | 0.019 | -0.0000566 |
+| musique_hops | 3.0 | oracle | 155 | -0.052 | -0.103 | 0.000 | -0.0000011 |
+| musique_hops | 3.0 | llm_decision_router | 155 | -0.045 | -0.097 | 0.006 | -0.0000592 |
+| musique_hops | 4.0 | llm_only | 94 | 0.021 | -0.043 | 0.085 | 0.0000017 |
+| musique_hops | 4.0 | always_rag | 94 | -0.074 | -0.128 | -0.021 | -0.0000534 |
+| musique_hops | 4.0 | oracle | 94 | -0.011 | -0.085 | 0.064 | -0.0000012 |
+| musique_hops | 4.0 | llm_decision_router | 94 | -0.053 | -0.117 | 0.011 | -0.0000585 |
+| hotpot_type | bridge | llm_only | 391 | -0.138 | -0.176 | -0.100 | 0.0000046 |
+| hotpot_type | bridge | always_rag | 391 | -0.066 | -0.107 | -0.028 | -0.0000365 |
+| hotpot_type | bridge | oracle | 391 | -0.123 | -0.164 | -0.082 | -0.0000022 |
+| hotpot_type | bridge | llm_decision_router | 391 | -0.090 | -0.133 | -0.046 | -0.0000268 |
+| hotpot_type | comparison | llm_only | 105 | -0.038 | -0.124 | 0.048 | 0.0000034 |
+| hotpot_type | comparison | always_rag | 105 | -0.029 | -0.086 | 0.029 | -0.0000348 |
+| hotpot_type | comparison | oracle | 105 | 0.019 | -0.038 | 0.076 | 0.0000031 |
+| hotpot_type | comparison | llm_decision_router | 105 | -0.019 | -0.076 | 0.038 | -0.0000069 |
+| wiki_type | bridge_comparison | llm_only | 96 | -0.083 | -0.208 | 0.042 | 0.0000020 |
+| wiki_type | bridge_comparison | always_rag | 96 | -0.146 | -0.271 | -0.031 | -0.0000457 |
+| wiki_type | bridge_comparison | oracle | 96 | -0.052 | -0.156 | 0.052 | -0.0000082 |
+| wiki_type | bridge_comparison | llm_decision_router | 96 | -0.156 | -0.281 | -0.031 | -0.0000254 |
+| wiki_type | comparison | llm_only | 137 | -0.255 | -0.358 | -0.153 | 0.0000028 |
+| wiki_type | comparison | always_rag | 137 | -0.161 | -0.248 | -0.073 | -0.0000490 |
+| wiki_type | comparison | oracle | 137 | -0.095 | -0.168 | -0.022 | -0.0000035 |
+| wiki_type | comparison | llm_decision_router | 137 | -0.182 | -0.270 | -0.095 | -0.0000261 |
+| wiki_type | compositional | llm_only | 205 | -0.054 | -0.098 | -0.010 | 0.0000037 |
+| wiki_type | compositional | always_rag | 205 | -0.078 | -0.137 | -0.020 | -0.0000663 |
+| wiki_type | compositional | oracle | 205 | -0.093 | -0.156 | -0.029 | -0.0000087 |
+| wiki_type | compositional | llm_decision_router | 205 | -0.073 | -0.132 | -0.015 | -0.0000630 |
+| wiki_type | inference | llm_only | 62 | -0.113 | -0.226 | -0.016 | 0.0000038 |
+| wiki_type | inference | always_rag | 62 | -0.032 | -0.145 | 0.081 | -0.0000744 |
+| wiki_type | inference | oracle | 62 | -0.113 | -0.242 | 0.016 | -0.0000109 |
+| wiki_type | inference | llm_decision_router | 62 | -0.065 | -0.177 | 0.048 | -0.0000619 |
 

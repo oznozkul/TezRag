@@ -53,6 +53,8 @@ to `runs/dryrun/` and never touch the real split or results.
 | Gemini runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemini.yaml [--dry-run] [--yes]` | `results/models/gemini-2.5-flash-lite/raw/` |
 | DeepSeek probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/deepseek.yaml` | `results/models/deepseek-flash/meta/param_probe.json` |
 | DeepSeek runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/deepseek.yaml [--dry-run] [--yes]` | `results/models/deepseek-flash/raw/` |
+| Qwen3.5-4B (local Ollama; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/qwen.yaml [--dry-run] [--yes]` | `results/models/qwen3.5-4b/raw/` |
+| Gemma 4 E2B (local Ollama; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemma.yaml [--dry-run] [--yes]` | `results/models/gemma4-e2b/raw/` |
 
 End-to-end dry run (8 questions per dataset, ≈ $0.003, never touches the real split or results):
 
@@ -272,10 +274,20 @@ flagged, then `incomplete` on retry, and is counted as wrong.
 - **Dispatch** (`dispatch.csv`): for every question, whether a call was logged, its final status, and the
   decision route. Both paths call the model. A question rejected twice by the provider filter stays
   marked sent and drops out of the comparison.
-- **Source attributes** (`question_meta.jsonl`, joined in `strata.csv`): `hop_type` for every question;
-  PopQA tertiles of `log10(s_pop)` (low = least popular; edges written once); MuSiQue hop count from the
-  id; HotpotQA `level` (hard for this entire sample) and `type`; 2Wiki reasoning `type`. NQ and TriviaQA
-  have no source difficulty field. These are not one easy/medium/hard scale, and they are not model outcomes.
+- **Source attributes** (`question_meta.jsonl`, joined in `strata.csv`). Written from the dataset
+  files, before accuracy, and used as separate cuts in the report. There is no single
+  easy/medium/hard label, and none is invented.
+
+  HotpotQA does publish easy/medium/hard. The IRCoT pool of 7,405 and the frozen sample of 500 are
+  entirely `level=hard`, so that label cannot split this sample. Level is stored. The cut that varies
+  is `type` (bridge 395, comparison 105), which is not a difficulty rank. MuSiQue's source difficulty
+  is the hop count on the question id (2-hop 251, 3-hop 155, 4-hop 94 here). PopQA has no difficulty
+  field; the cut is a tertile of `log10(s_pop)` on the frozen 500, edges written once, low = least
+  popular. 2Wiki `type` is a reasoning type (compositional, comparison, bridge_comparison, inference).
+  NQ and TriviaQA have no source difficulty field; they appear only under `hop_type` (single / multi),
+  the only cut defined for every question. A second model is not asked to judge difficulty, and
+  outcome labels (`both_fail`, `rag_hurts`, and the rest) stay outcomes. The nano report states where
+  these cuts move accuracy and whether the decision router beats Always-RAG inside them.
 
 Gemini 2.5 Flash-Lite uses the same prompts, the same BM25 cache, and the same three call types.
 `thinking_budget` is 0. Prices are the standard paid text tier on the Gemini pricing page
@@ -291,6 +303,12 @@ DeepSeek uses the same prompts and the same three call types, through the OpenAI
 turned off (`reasoning_effort: none`). Off-peak prices, retrieved 2026-10-24: $0.15/1M cache-miss
 input, $0.003/1M cache-hit input, $0.60/1M output. Weekday peak hours (01:00-04:00 and 06:00-10:00 UTC)
 are double. Logs go to `results/models/deepseek-flash/`.
+
+Qwen and Gemma run locally through Ollama, on the same prompts and the same three call types.
+The machine has 16 GB of memory, so the nano-sized builds are `qwen3.5:4b` (Qwen3.5-4B, Q4_K_M,
+about 3.4 GB; `think` off) and `gemma4:e2b` (Gemma 4 E2B, 2.3B effective parameters). The larger
+small-tier builds, Qwen3.5-9B and Gemma 4 E4B, do not leave room beside the OS. Their API price
+is 0. One call at a time. Logs go to `results/models/qwen3.5-4b/` and `results/models/gemma4-e2b/`.
 
 ## Differences from Adaptive-RAG
 

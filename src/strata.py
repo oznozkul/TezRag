@@ -124,6 +124,73 @@ def compare_table(frames: dict[str, pd.DataFrame], cfg: Config) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _intervals_overlap(a, b) -> bool:
+    return not (float(a.acc_ci_hi) < float(b.acc_ci_lo) or float(b.acc_ci_hi) < float(a.acc_ci_lo))
+
+
+def _cell(g: pd.DataFrame, stratum: str, value, system: str):
+    sub = g[(g.stratum == stratum) & (g.stratum_value.astype(str) == str(value)) & (g.system == system)]
+    if sub.empty:
+        return None
+    return sub.iloc[0]
+
+
+def consideration_lines(g: pd.DataFrame) -> list[str]:
+    """How the source cuts bear on the decision router versus Always-RAG."""
+    lines = [
+        "**Taken into account.** These cuts stay separate. No easy/medium/hard label is assigned: "
+        "HotpotQA's official level is hard on every question in this sample, NQ and TriviaQA publish "
+        "none, PopQA's tertiles are popularity, and 2Wiki's type is a reasoning type. Outcome labels "
+        "are not treated as difficulty.",
+        "",
+    ]
+    gaps = []
+    for spec in SPECS:
+        sub = g[g.stratum == spec["name"]]
+        for value in sub.stratum_value.unique():
+            rag = _cell(g, spec["name"], value, "always_rag")
+            dec = _cell(g, spec["name"], value, "llm_decision_router")
+            if rag is None or dec is None:
+                continue
+            gaps.append((float(dec.accuracy) - float(rag.accuracy), spec["name"], value,
+                         int(rag.n), _intervals_overlap(dec, rag)))
+    if gaps:
+        worst = min(gaps, key=lambda t: t[0])
+        above = [t for t in gaps if t[0] > 0]
+
+        def _bit(t) -> str:
+            overlap = "intervals overlap" if t[4] else "intervals do not overlap"
+            return f"{t[1]}={t[2]} {t[0]:+.3f} (n={t[3]}; {overlap})"
+
+        if not above:
+            lines.append(
+                "On the point estimate, the decision router's accuracy is at or below Always-RAG "
+                f"in every cut above. The largest gap is {_bit(worst)}.")
+        else:
+            bits = ", ".join(_bit(t) for t in above)
+            lines.append(
+                "On the point estimate, the decision router is above Always-RAG only on: " + bits + ". "
+                f"The largest gap elsewhere is {_bit(worst)}.")
+        lines.append("")
+    moves = []
+    for stratum, value, label in (
+        ("pop_tertile", "low", "PopQA least popular"),
+        ("pop_tertile", "high", "PopQA most popular"),
+        ("musique_hops", "4", "MuSiQue 4-hop"),
+    ):
+        base = _cell(g, stratum, value, "llm_only")
+        rag = _cell(g, stratum, value, "always_rag")
+        if base is None or rag is None:
+            continue
+        moves.append(
+            f"{label}: Always-RAG {float(rag.accuracy):.3f} against llm-only {float(base.accuracy):.3f} "
+            f"(n={int(rag.n)})")
+    if moves:
+        lines.append("Where retrieval itself moves accuracy: " + "; ".join(moves) + ".")
+        lines.append("")
+    return lines
+
+
 def stratum_markdown(strata: pd.DataFrame, compare: pd.DataFrame) -> str:
     from src.report import fmt, md_table
 
@@ -145,6 +212,7 @@ def stratum_markdown(strata: pd.DataFrame, compare: pd.DataFrame) -> str:
             if sub.empty:
                 continue
             lines += [f"**{spec['name']}.** {spec['note']}", "", md_table(sub, show), ""]
+        lines += consideration_lines(g)
     if compare.empty:
         lines += ["One model is in the results directory, so there is no cross-model comparison.", ""]
     else:
