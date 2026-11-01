@@ -1,0 +1,6 @@
+{
+  "n": 500,
+  "q33_log10": 2.5323279800468814,
+  "q66_log10": 3.454270809402799,
+  "rule": "low: log10(s_pop) <= q33; mid: <= q66; high: above q66. A value on a boundary goes to the lower bin. Edges are tertiles of the frozen PopQA sample, not of the full pool."
+}

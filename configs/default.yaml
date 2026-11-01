@@ -94,6 +94,23 @@ pricing:
     output_per_1m: 0.40
     source: https://developers.openai.com/api/docs/models/gpt-5-nano
     retrieved: "2026-10-14"
+  gemini-2.5-flash-lite:
+    # Standard paid tier, text. Output price includes thinking tokens.
+    # https://ai.google.dev/gemini-api/docs/pricing (page retrieved 2026-10-24).
+    input_per_1m: 0.10
+    cached_input_per_1m: 0.01
+    output_per_1m: 0.40
+    source: https://ai.google.dev/gemini-api/docs/pricing
+    retrieved: "2026-10-24"
+  deepseek-flash:
+    # Off-peak cache-miss / cache-hit / output. Peak hours are double (peak_multiplier).
+    # https://api-docs.deepseek.com/quick_start/pricing retrieved 2026-10-24.
+    input_per_1m: 0.15
+    cached_input_per_1m: 0.003
+    output_per_1m: 0.60
+    peak_multiplier: 2
+    source: https://api-docs.deepseek.com/quick_start/pricing
+    retrieved: "2026-10-24"
   retrieval_bm25:
     per_call_usd: 0.0
     note: local Pyserini BM25; reported as call count and latency, monetary cost 0

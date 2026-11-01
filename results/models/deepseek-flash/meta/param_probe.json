@@ -1,0 +1,108 @@
+{
+  "model": "deepseek-flash",
+  "probed_at": "2026-10-24T11:35:29.693678+00:00",
+  "params": {
+    "reasoning_effort": {
+      "value": "none",
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 11,
+          "input_tokens_details": {
+            "cache_write_tokens": null,
+            "cached_tokens": 0
+          },
+          "output_tokens": 1,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 12
+        },
+        "output_text": "OK",
+        "model": "deepseek-flash"
+      }
+    },
+    "temperature": {
+      "value": 0,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 37,
+          "input_tokens_details": {
+            "cache_write_tokens": null,
+            "cached_tokens": 0
+          },
+          "output_tokens": 12,
+          "output_tokens_details": {
+            "reasoning_tokens": 10
+          },
+          "total_tokens": 49
+        },
+        "output_text": "OK",
+        "model": "deepseek-flash"
+      }
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "status": "completed",
+        "usage": {
+          "input_tokens": 37,
+          "input_tokens_details": {
+            "cache_write_tokens": null,
+            "cached_tokens": 0
+          },
+          "output_tokens": 12,
+          "output_tokens_details": {
+            "reasoning_tokens": 10
+          },
+          "total_tokens": 49
+        },
+        "output_text": "OK",
+        "model": "deepseek-flash"
+      }
+    }
+  },
+  "reasoning_effort_levels": {
+    "none": {
+      "accepted": true,
+      "error": null,
+      "usage": {
+        "input_tokens": 11,
+        "input_tokens_details": {
+          "cache_write_tokens": null,
+          "cached_tokens": 0
+        },
+        "output_tokens": 1,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 12
+      }
+    }
+  },
+  "bare_request": {
+    "status": "completed",
+    "usage": {
+      "input_tokens": 37,
+      "input_tokens_details": {
+        "cache_write_tokens": null,
+        "cached_tokens": 0
+      },
+      "output_tokens": 12,
+      "output_tokens_details": {
+        "reasoning_tokens": 10
+      },
+      "total_tokens": 49
+    },
+    "output_text": "OK",
+    "model": "deepseek-flash"
+  },
+  "lowest_reasoning_effort": "none"
+}

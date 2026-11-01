@@ -17,7 +17,7 @@ from src.config import load_config
 from src.data import load_questions
 from src.io_utils import read_jsonl, write_text
 from src.metrics import score
-from src.run_baselines import out_path
+from src.paths import out_path
 
 
 def _mean(xs):

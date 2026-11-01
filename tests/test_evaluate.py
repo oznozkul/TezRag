@@ -4,7 +4,8 @@ import pytest
 from src.bootstrap import paired_mean_diff, paired_stat_diff
 from src.config import load_config
 from src.cost import call_usd
-from src.evaluate import build_rows, final_records
+from src.evaluate import build_rows
+from src.records import final_records
 from src.io_utils import write_jsonl
 from src.leakage import leak_flags
 from src.routers import oracle_route, outcome_label

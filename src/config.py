@@ -68,11 +68,18 @@ class RetrievalCfg(_Strict):
 
 
 class LLMCfg(_Strict):
-    provider: Literal["openai"]
+    provider: Literal["openai", "gemini", "deepseek"]
     model: str
-    api: Literal["responses"]
+    api: Literal["responses", "generate_content"]
     params: dict[str, Any]
     timeout_s: float
+
+    @model_validator(mode="after")
+    def _api(self) -> "LLMCfg":
+        expected = {"openai": "responses", "gemini": "generate_content", "deepseek": "responses"}[self.provider]
+        if self.api != expected:
+            raise ValueError(f"{self.provider} uses api {expected!r}, not {self.api!r}")
+        return self
 
 
 class PromptsCfg(_Strict):
@@ -148,10 +155,28 @@ def config_hash(cfg: Config) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
+def _merge(base: dict, over: dict, replace_keys: frozenset[str] = frozenset()) -> dict:
+    """Deep-merge `over` onto `base`. `llm.params` is replaced whole, not key by key,
+    so a Gemini overlay does not inherit OpenAI-only parameters."""
+    out = dict(base)
+    for key, value in over.items():
+        if (key in replace_keys or not isinstance(value, dict)
+                or not isinstance(out.get(key), dict)):
+            out[key] = value
+        else:
+            child = frozenset({"params"}) if key == "llm" else frozenset()
+            out[key] = _merge(out[key], value, child)
+    return out
+
+
 def load_config(path: str | os.PathLike | None = None) -> Config:
-    p = Path(path) if path else DEFAULT_CONFIG
-    with open(p) as f:
+    with open(DEFAULT_CONFIG) as f:
         raw = yaml.safe_load(f)
+    if path:
+        p = Path(path)
+        if p.resolve() != DEFAULT_CONFIG.resolve():
+            with open(p) as f:
+                raw = _merge(raw, yaml.safe_load(f) or {})
     return Config.model_validate(raw)
 
 

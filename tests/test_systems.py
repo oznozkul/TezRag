@@ -7,6 +7,7 @@ from src import run_baselines
 from src.config import load_config
 from src.io_utils import read_jsonl
 from src.llm import LLMResult, to_api_kwargs
+from src.records import error_kind
 from src.systems import build_prompt, parse_decision, route_for, template
 
 CFG = load_config()
@@ -110,8 +111,8 @@ def test_resume_rule(tmp_path, monkeypatch):
 def test_old_flagged_records_are_recognised_by_message():
     r = {"error": "BadRequestError 400: ... your prompt was flagged as potentially violating our usage "
                   "policy ...", "error_kind": "permanent"}
-    assert run_baselines.error_kind(r) == "flagged"
-    assert run_baselines.error_kind({"error": None}) is None
+    assert error_kind(r) == "flagged"
+    assert error_kind({"error": None}) is None
 
 
 def test_full_run_needs_yes(tmp_path, monkeypatch):

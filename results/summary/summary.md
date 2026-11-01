@@ -4,7 +4,7 @@ Model `gpt-5-nano-2025-08-07`; prices $0.05/1M input, $0.005/1M cached input, $0
 
 ## Question set
 
-3000 questions; **2994 in the common comparison set**; 6 excluded because the prompt was rejected by OpenAI's filter twice (first call + one `--retry-flagged`).
+3000 questions; **2994 in the common comparison set**; 6 excluded because the prompt was rejected by the provider's filter twice (first call + one `--retry-flagged`).
 
 | qid | dataset | split | flagged in | calls |
 |---|---|---|---|---|
@@ -207,4 +207,100 @@ Leak = `incomplete` (hit max_output_tokens) or >= 17 words or a deliberation mar
 | llm_decision | 2994 | 0 | 0.000 | 0 | 0 | 0 |
 
 Per dataset: `leakage.csv`.
+
+
+## Calls logged per question
+
+Sent means a call was logged. Both paths call the model; `route` on `llm_decision` is which path that call selected (`llm_only` or `always_rag`). A question rejected by the filter twice stays sent and leaves `in_comparison`. Source attributes on the same rows are in `dispatch.csv`.
+
+- `gpt-5-nano-2025-08-07`: 3000/3000 questions have an `llm_only` call; 2994 are in the comparison set.
+
+## Accuracy and cost by source attribute
+
+Cuts are the attributes the source datasets define. They are not one difficulty scale, and they are not model outcomes. NQ and TriviaQA have no source difficulty field; they appear only under `hop_type`. Intervals are percentile bootstrap CIs of the mean. Full tables: `strata.csv`.
+
+### gpt-5-nano-2025-08-07
+
+**hop_type.** single vs multi; the only cut defined for every question
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| multi | llm_only | 1495 | 0.201 | 0.181 | 0.221 | 0.0000126 |
+| multi | always_rag | 1495 | 0.301 | 0.278 | 0.325 | 0.0000394 |
+| multi | oracle | 1495 | 0.363 | 0.338 | 0.387 | 0.0000169 |
+| multi | llm_decision_router | 1495 | 0.282 | 0.259 | 0.305 | 0.0000446 |
+| single | llm_only | 1499 | 0.418 | 0.392 | 0.443 | 0.0000119 |
+| single | always_rag | 1499 | 0.506 | 0.480 | 0.531 | 0.0000473 |
+| single | oracle | 1499 | 0.592 | 0.568 | 0.617 | 0.0000183 |
+| single | llm_decision_router | 1499 | 0.502 | 0.477 | 0.527 | 0.0000526 |
+
+**pop_tertile.** thirds of log10(s_pop) on the frozen PopQA sample; low is least popular. Not a difficulty ranking.
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| high | llm_only | 167 | 0.443 | 0.365 | 0.521 | 0.0000117 |
+| high | always_rag | 167 | 0.449 | 0.371 | 0.527 | 0.0000465 |
+| high | oracle | 167 | 0.581 | 0.503 | 0.653 | 0.0000167 |
+| high | llm_decision_router | 167 | 0.449 | 0.371 | 0.527 | 0.0000534 |
+| low | llm_only | 167 | 0.210 | 0.150 | 0.275 | 0.0000113 |
+| low | always_rag | 167 | 0.431 | 0.359 | 0.509 | 0.0000475 |
+| low | oracle | 167 | 0.467 | 0.389 | 0.545 | 0.0000212 |
+| low | llm_decision_router | 167 | 0.431 | 0.359 | 0.509 | 0.0000566 |
+| mid | llm_only | 166 | 0.229 | 0.169 | 0.295 | 0.0000112 |
+| mid | always_rag | 166 | 0.380 | 0.307 | 0.452 | 0.0000470 |
+| mid | oracle | 166 | 0.446 | 0.373 | 0.524 | 0.0000193 |
+| mid | llm_decision_router | 166 | 0.373 | 0.301 | 0.446 | 0.0000547 |
+
+**musique_hops.** hop count from the MuSiQue id; subtypes such as 3hop1 and 4hop2 collapse to 3 and 4
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| 2 | llm_only | 250 | 0.096 | 0.060 | 0.136 | 0.0000133 |
+| 2 | always_rag | 250 | 0.164 | 0.120 | 0.212 | 0.0000415 |
+| 2 | oracle | 250 | 0.224 | 0.172 | 0.276 | 0.0000165 |
+| 2 | llm_decision_router | 250 | 0.160 | 0.116 | 0.208 | 0.0000474 |
+| 3 | llm_only | 155 | 0.065 | 0.026 | 0.103 | 0.0000127 |
+| 3 | always_rag | 155 | 0.097 | 0.052 | 0.148 | 0.0000437 |
+| 3 | oracle | 155 | 0.129 | 0.077 | 0.187 | 0.0000146 |
+| 3 | llm_decision_router | 155 | 0.077 | 0.039 | 0.123 | 0.0000479 |
+| 4 | llm_only | 94 | 0.064 | 0.021 | 0.117 | 0.0000119 |
+| 4 | always_rag | 94 | 0.011 | 0.000 | 0.032 | 0.0000446 |
+| 4 | oracle | 94 | 0.074 | 0.021 | 0.128 | 0.0000122 |
+| 4 | llm_decision_router | 94 | 0.032 | 0.000 | 0.074 | 0.0000481 |
+
+**hotpot_type.** HotpotQA level is hard for every question in this sample; type is not a difficulty rank
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| bridge | llm_only | 391 | 0.136 | 0.102 | 0.169 | 0.0000137 |
+| bridge | always_rag | 391 | 0.299 | 0.253 | 0.345 | 0.0000327 |
+| bridge | oracle | 391 | 0.335 | 0.289 | 0.381 | 0.0000178 |
+| bridge | llm_decision_router | 391 | 0.263 | 0.220 | 0.307 | 0.0000379 |
+| comparison | llm_only | 105 | 0.667 | 0.571 | 0.752 | 0.0000111 |
+| comparison | always_rag | 105 | 0.705 | 0.619 | 0.790 | 0.0000297 |
+| comparison | oracle | 105 | 0.771 | 0.686 | 0.848 | 0.0000130 |
+| comparison | llm_decision_router | 105 | 0.686 | 0.600 | 0.771 | 0.0000340 |
+
+**wiki_type.** 2Wiki reasoning type, not a difficulty rank
+
+| value | system | n | Acc | CI lo | CI hi | $/q |
+|---|---|---|---|---|---|---|
+| bridge_comparison | llm_only | 96 | 0.490 | 0.385 | 0.594 | 0.0000114 |
+| bridge_comparison | always_rag | 96 | 0.531 | 0.427 | 0.635 | 0.0000353 |
+| bridge_comparison | oracle | 96 | 0.750 | 0.656 | 0.833 | 0.0000186 |
+| bridge_comparison | llm_decision_router | 96 | 0.500 | 0.396 | 0.604 | 0.0000377 |
+| comparison | llm_only | 137 | 0.496 | 0.409 | 0.577 | 0.0000116 |
+| comparison | always_rag | 137 | 0.723 | 0.642 | 0.796 | 0.0000374 |
+| comparison | oracle | 137 | 0.847 | 0.781 | 0.905 | 0.0000210 |
+| comparison | llm_decision_router | 137 | 0.672 | 0.591 | 0.752 | 0.0000411 |
+| compositional | llm_only | 205 | 0.093 | 0.054 | 0.137 | 0.0000114 |
+| compositional | always_rag | 205 | 0.185 | 0.132 | 0.239 | 0.0000477 |
+| compositional | oracle | 205 | 0.210 | 0.156 | 0.268 | 0.0000163 |
+| compositional | llm_decision_router | 205 | 0.180 | 0.127 | 0.234 | 0.0000550 |
+| inference | llm_only | 62 | 0.065 | 0.016 | 0.129 | 0.0000143 |
+| inference | always_rag | 62 | 0.226 | 0.129 | 0.339 | 0.0000550 |
+| inference | oracle | 62 | 0.258 | 0.161 | 0.371 | 0.0000236 |
+| inference | llm_decision_router | 62 | 0.226 | 0.129 | 0.339 | 0.0000636 |
+
+One model is in the results directory, so there is no cross-model comparison.
 

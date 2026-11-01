@@ -1,0 +1,170 @@
+{
+  "model": "gemini-2.5-flash-lite",
+  "provider": "gemini",
+  "probed_at": "2026-10-24T11:43:40.828194+00:00",
+  "params": {
+    "temperature": {
+      "value": 0,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "finish_reason": "STOP",
+        "usage": {
+          "cache_tokens_details": null,
+          "cached_content_token_count": null,
+          "candidates_token_count": 1,
+          "candidates_tokens_details": null,
+          "prompt_token_count": 8,
+          "prompt_tokens_details": [
+            {
+              "modality": "TEXT",
+              "token_count": 8
+            }
+          ],
+          "thoughts_token_count": null,
+          "tool_use_prompt_token_count": null,
+          "tool_use_prompt_tokens_details": null,
+          "total_token_count": 9,
+          "traffic_type": null
+        },
+        "text": "OK",
+        "model": "gemini-2.5-flash-lite"
+      }
+    },
+    "top_p": {
+      "value": 1,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "finish_reason": "STOP",
+        "usage": {
+          "cache_tokens_details": null,
+          "cached_content_token_count": null,
+          "candidates_token_count": 1,
+          "candidates_tokens_details": null,
+          "prompt_token_count": 8,
+          "prompt_tokens_details": [
+            {
+              "modality": "TEXT",
+              "token_count": 8
+            }
+          ],
+          "thoughts_token_count": null,
+          "tool_use_prompt_token_count": null,
+          "tool_use_prompt_tokens_details": null,
+          "total_token_count": 9,
+          "traffic_type": null
+        },
+        "text": "OK",
+        "model": "gemini-2.5-flash-lite"
+      }
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "finish_reason": "STOP",
+        "usage": {
+          "cache_tokens_details": null,
+          "cached_content_token_count": null,
+          "candidates_token_count": 1,
+          "candidates_tokens_details": null,
+          "prompt_token_count": 8,
+          "prompt_tokens_details": [
+            {
+              "modality": "TEXT",
+              "token_count": 8
+            }
+          ],
+          "thoughts_token_count": null,
+          "tool_use_prompt_token_count": null,
+          "tool_use_prompt_tokens_details": null,
+          "total_token_count": 9,
+          "traffic_type": null
+        },
+        "text": "OK",
+        "model": "gemini-2.5-flash-lite"
+      }
+    },
+    "seed": {
+      "value": 42,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "finish_reason": "STOP",
+        "usage": {
+          "cache_tokens_details": null,
+          "cached_content_token_count": null,
+          "candidates_token_count": 1,
+          "candidates_tokens_details": null,
+          "prompt_token_count": 8,
+          "prompt_tokens_details": [
+            {
+              "modality": "TEXT",
+              "token_count": 8
+            }
+          ],
+          "thoughts_token_count": null,
+          "tool_use_prompt_token_count": null,
+          "tool_use_prompt_tokens_details": null,
+          "total_token_count": 9,
+          "traffic_type": null
+        },
+        "text": "OK",
+        "model": "gemini-2.5-flash-lite"
+      }
+    },
+    "thinking_budget": {
+      "value": 0,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "finish_reason": "STOP",
+        "usage": {
+          "cache_tokens_details": null,
+          "cached_content_token_count": null,
+          "candidates_token_count": 1,
+          "candidates_tokens_details": null,
+          "prompt_token_count": 8,
+          "prompt_tokens_details": [
+            {
+              "modality": "TEXT",
+              "token_count": 8
+            }
+          ],
+          "thoughts_token_count": null,
+          "tool_use_prompt_token_count": null,
+          "tool_use_prompt_tokens_details": null,
+          "total_token_count": 9,
+          "traffic_type": null
+        },
+        "text": "OK",
+        "model": "gemini-2.5-flash-lite"
+      }
+    }
+  },
+  "bare_request": {
+    "finish_reason": "STOP",
+    "usage": {
+      "cache_tokens_details": null,
+      "cached_content_token_count": null,
+      "candidates_token_count": 1,
+      "candidates_tokens_details": null,
+      "prompt_token_count": 8,
+      "prompt_tokens_details": [
+        {
+          "modality": "TEXT",
+          "token_count": 8
+        }
+      ],
+      "thoughts_token_count": null,
+      "tool_use_prompt_token_count": null,
+      "tool_use_prompt_tokens_details": null,
+      "total_token_count": 9,
+      "traffic_type": null
+    },
+    "text": "OK",
+    "model": "gemini-2.5-flash-lite"
+  }
+}

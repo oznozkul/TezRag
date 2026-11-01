@@ -1,0 +1,28 @@
+# Overlay on configs/default.yaml. deepseek-flash is DeepSeek-V4.1-Flash-1017.
+# reasoning_effort none turns thinking off (Responses API). Prices are the off-peak
+# text rates; weekday peak hours are billed at twice that. See pricing in default.yaml.
+
+llm:
+  provider: deepseek
+  model: deepseek-flash
+  api: responses
+  params:
+    reasoning_effort: none
+    temperature: 0
+    max_output_tokens: 256
+  timeout_s: 60
+
+runner:
+  concurrency: 8
+  rpm: 300
+  tpm: 200000
+
+pricing:
+  deepseek-flash:
+    input_per_1m: 0.15
+    cached_input_per_1m: 0.003
+    output_per_1m: 0.60
+    peak_multiplier: 2
+    source: https://api-docs.deepseek.com/quick_start/pricing
+    retrieved: "2026-10-24"
+    note: off-peak cache-miss input and output; peak weekdays 01:00-04:00 and 06:00-10:00 UTC are double

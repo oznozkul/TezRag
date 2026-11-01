@@ -27,6 +27,7 @@ from aiolimiter import AsyncLimiter
 
 from src.config import Config, load_config
 from src.io_utils import setup_logging, write_json
+from src.paths import probe_path
 
 log = logging.getLogger("llm")
 
@@ -77,9 +78,15 @@ def is_flagged_message(error: str | None) -> bool:
     return bool(error) and FLAGGED_MARKER in error
 
 
-def _client():
+def _client(cfg: Config):
     from openai import AsyncOpenAI
 
+    # DeepSeek speaks the OpenAI Responses API at its own host. The key never comes from the config.
+    if cfg.llm.provider == "deepseek":
+        key = os.environ.get("DEEPSEEK_API_KEY")
+        if not key:
+            raise SystemExit("DEEPSEEK_API_KEY is not set (put it in .env)")
+        return AsyncOpenAI(api_key=key, base_url="https://api.deepseek.com", max_retries=0)
     if not os.environ.get("OPENAI_API_KEY"):
         raise SystemExit("OPENAI_API_KEY is not set (put it in .env)")
     return AsyncOpenAI(max_retries=0)  # retries are ours, so they are counted and logged
@@ -91,7 +98,7 @@ class LLMClient:
         self.model = cfg.llm.model
         self.sent_params = sent_params
         self.kwargs = to_api_kwargs(sent_params)
-        self.client = _client()
+        self.client = _client(cfg)
         self.sem = asyncio.Semaphore(concurrency or cfg.runner.concurrency)
         self.rpm = AsyncLimiter(cfg.runner.rpm, 60)
         self.tpm = AsyncLimiter(cfg.runner.tpm, 60)
@@ -140,8 +147,10 @@ class LLMClient:
             return res
         res.raw_usage = u.model_dump()
         res.input_tokens, res.output_tokens = u.input_tokens, u.output_tokens
-        res.reasoning_tokens = u.output_tokens_details.reasoning_tokens
-        res.cached_input_tokens = u.input_tokens_details.cached_tokens
+        out_details = getattr(u, "output_tokens_details", None)
+        in_details = getattr(u, "input_tokens_details", None)
+        res.reasoning_tokens = getattr(out_details, "reasoning_tokens", 0) or 0
+        res.cached_input_tokens = getattr(in_details, "cached_tokens", 0) or 0
         if r.status != "completed":
             reason = r.incomplete_details.reason if r.incomplete_details else "unknown"
             res.error, res.error_kind = f"status={r.status} ({reason})", "incomplete"
@@ -162,7 +171,7 @@ async def _try(client, model: str, kwargs: dict) -> tuple[bool, str | None, dict
 
 
 async def probe(cfg: Config) -> dict:
-    client = _client()
+    client = _client(cfg)
     model = cfg.llm.model
     out: dict = {"model": model, "probed_at": datetime.now(timezone.utc).isoformat(),
                  "params": {}, "reasoning_effort_levels": {}}
@@ -183,10 +192,6 @@ async def probe(cfg: Config) -> dict:
             out["lowest_reasoning_effort"] = level
             break
     return out
-
-
-def probe_path(cfg: Config):
-    return cfg.path("results") / "meta" / "param_probe.json"
 
 
 def load_sent_params(cfg: Config) -> tuple[dict, dict]:
@@ -221,7 +226,11 @@ def main() -> None:
     ap.add_argument("--probe", action="store_true", required=True)
     args = ap.parse_args()
     cfg = load_config(args.config)
-    out = asyncio.run(probe(cfg))
+    if cfg.llm.provider == "gemini":
+        from src.llm_gemini import probe as gemini_probe
+        out = asyncio.run(gemini_probe(cfg))
+    else:
+        out = asyncio.run(probe(cfg))
     write_json(probe_path(cfg), out)
     print(json.dumps({k: v["accepted"] for k, v in out["params"].items()}, indent=1))
     print("lowest reasoning effort:", out.get("lowest_reasoning_effort"))

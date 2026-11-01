@@ -26,6 +26,18 @@ def paired_mean_diff(a, b, strata=None, n_boot: int = 10_000, ci: float = 0.95,
     return float(d.mean()), float(lo), float(hi)
 
 
+def mean_ci(x, n_boot: int = 10_000, ci: float = 0.95, seed: int = 42) -> tuple[float, float, float]:
+    """Mean of x and its percentile CI. One observation gives a zero-width interval."""
+    x = np.asarray(x, dtype=float)
+    if len(x) == 0:
+        return float("nan"), float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(x), size=(n_boot, len(x)))
+    boots = x[idx].mean(axis=1)
+    lo, hi = np.quantile(boots, [(1 - ci) / 2, 1 - (1 - ci) / 2])
+    return float(x.mean()), float(lo), float(hi)
+
+
 def paired_stat_diff(a, b, stat=np.median, n_boot: int = 10_000, ci: float = 0.95,
                      seed: int = 42) -> tuple[float, float, float]:
     """stat(a) - stat(b) on paired resamples (e.g. median latency difference)."""

@@ -32,7 +32,9 @@ from pathlib import Path
 from src.config import Config, load_config
 from src.data import load_questions
 from src.io_utils import append_jsonl, read_jsonl, setup_logging, sha256_text
-from src.llm import LLMClient, LLMResult, is_flagged_message, load_sent_params
+from src.llm import LLMClient, LLMResult, load_sent_params
+from src.paths import out_path
+from src.records import error_kind
 from src.retrieval import BM25Retriever
 from src.retrieve import warmup
 from src.systems import SYSTEMS, USES_RETRIEVAL, build_prompt, parse_decision, route_for
@@ -47,19 +49,15 @@ def prompt_hash(model: str, prompt: str, sent_params: dict) -> str:
                                   sort_keys=True, ensure_ascii=False))[:16]
 
 
-def out_path(cfg: Config, system: str, dry_run: bool, latency: bool) -> Path:
-    return cfg.path("results", dry_run) / ("latency" if latency else "raw") / f"{system}.jsonl"
+def open_client(cfg: Config, sent: dict, concurrency: int | None = None):
+    if cfg.llm.provider == "gemini":
+        from src.llm_gemini import GeminiClient
+        return GeminiClient(cfg, sent, concurrency)
+    return LLMClient(cfg, sent, concurrency)
 
 
 FINAL_ERROR_KINDS = {"incomplete", "permanent", "no_usage"}
 MAX_FLAGGED_ATTEMPTS = 2   # first call + one --retry-flagged
-
-
-def error_kind(r: dict) -> str | None:
-    """Error kind of a record; records written before `flagged` existed are classified by message."""
-    if r.get("error") is None:
-        return None
-    return "flagged" if is_flagged_message(r["error"]) else r.get("error_kind")
 
 
 def done_keys(path: Path, retry_flagged: bool = False) -> set[tuple]:
@@ -142,7 +140,7 @@ async def run_system(cfg: Config, system: str, questions: list[dict], *, dry_run
         if USES_RETRIEVAL[system]:
             for corpus in sorted({cfg.retrieval.corpus_for[q["dataset"]] for q in questions}):
                 warmup(retriever, corpus, cfg.latency.warmup)
-        client = LLMClient(cfg, sent, concurrency=cfg.latency.concurrency)
+        client = open_client(cfg, sent, concurrency=cfg.latency.concurrency)
         # prompt hash needs the passages, so pending is decided per question, sequentially
         n_new = 0
         try:
@@ -179,7 +177,7 @@ async def run_system(cfg: Config, system: str, questions: list[dict], *, dry_run
     if not dry_run and not yes:
         raise SystemExit("paid full run: re-run with --yes after checking the estimate")
 
-    client = LLMClient(cfg, sent)
+    client = open_client(cfg, sent)
     with open(path, "a") as f:
         async def one(item):
             q, r, prompt, ph = item

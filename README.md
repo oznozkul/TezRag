@@ -22,6 +22,8 @@ export JAVA_HOME=~/.local/jdk/jdk-21.0.12.1+1/Contents/Home
 uv sync                       # creates .venv from uv.lock (exact versions)
 # create .env (git-ignored) with two lines:
 #   OPENAI_API_KEY=sk-...
+#   GEMINI_API_KEY=...
+#   DEEPSEEK_API_KEY=...
 #   JAVA_HOME=/path/to/jdk-21
 uv run pytest                 # unit tests
 ```
@@ -45,7 +47,12 @@ to `runs/dryrun/` and never touch the real split or results.
 | Stage 3: runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines [--dry-run] [--system ...] [--yes]` | `results/raw/<system>.jsonl` |
 | Stage 3: sequential latency run (paid) | `uv run python -m src.run_baselines --latency --yes` | `results/latency/<system>.jsonl` |
 | Inspect runs | `uv run python -m src.inspect_runs [--dry-run]` | `results/summary/inspection.md` |
+| Question attributes (no model calls) | `uv run python -m src.question_meta` | `data/processed/question_meta.jsonl` (write-once) |
 | Stage 4: evaluation + report | `uv run python -m src.evaluate [--dry-run]` | `results/summary/*.csv`, `results/summary/summary.md` |
+| Gemini probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/gemini.yaml` | `results/models/gemini-2.5-flash-lite/meta/param_probe.json` |
+| Gemini runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/gemini.yaml [--dry-run] [--yes]` | `results/models/gemini-2.5-flash-lite/raw/` |
+| DeepSeek probe (paid, a few calls) | `uv run python -m src.llm --probe --config configs/deepseek.yaml` | `results/models/deepseek-flash/meta/param_probe.json` |
+| DeepSeek runs (paid; full runs need `--yes`) | `uv run python -m src.run_baselines --config configs/deepseek.yaml [--dry-run] [--yes]` | `results/models/deepseek-flash/raw/` |
 
 End-to-end dry run (8 questions per dataset, ≈ $0.003, never touches the real split or results):
 
@@ -262,6 +269,28 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   percentile CIs for accuracy and cost per 1,000 questions.
 - **Reasoning leakage** ([src/leakage.py](src/leakage.py)): `incomplete`, ≥ 17 words, or a deliberation
   marker; reported per criterion.
+- **Dispatch** (`dispatch.csv`): for every question, whether a call was logged, its final status, and the
+  decision route. Both paths call the model. A question rejected twice by the provider filter stays
+  marked sent and drops out of the comparison.
+- **Source attributes** (`question_meta.jsonl`, joined in `strata.csv`): `hop_type` for every question;
+  PopQA tertiles of `log10(s_pop)` (low = least popular; edges written once); MuSiQue hop count from the
+  id; HotpotQA `level` (hard for this entire sample) and `type`; 2Wiki reasoning `type`. NQ and TriviaQA
+  have no source difficulty field. These are not one easy/medium/hard scale, and they are not model outcomes.
+
+Gemini 2.5 Flash-Lite uses the same prompts, the same BM25 cache, and the same three call types.
+`thinking_budget` is 0. Prices are the standard paid text tier on the Gemini pricing page
+(retrieved 2026-10-24): $0.10/1M input, $0.01/1M cached input, $0.40/1M output, thinking tokens included
+in the output price. Its logs are `results/models/gemini-2.5-flash-lite/`. The key probed on 2026-10-24 is on the
+free tier: 20 generateContent requests per day for this model, so the 3,000-question run needs
+billing on that Google project. Re-run `src.evaluate` after
+that run; the report adds paired accuracy and cost by the attributes above when both models are complete.
+There is no Gemini latency run.
+
+DeepSeek uses the same prompts and the same three call types, through the OpenAI Responses API at
+`https://api.deepseek.com`. The model is `deepseek-flash` (DeepSeek-V4.1-Flash-1017) with thinking
+turned off (`reasoning_effort: none`). Off-peak prices, retrieved 2026-10-24: $0.15/1M cache-miss
+input, $0.003/1M cache-hit input, $0.60/1M output. Weekday peak hours (01:00-04:00 and 06:00-10:00 UTC)
+are double. Logs go to `results/models/deepseek-flash/`.
 
 ## Differences from Adaptive-RAG
 
@@ -276,7 +305,7 @@ flagged, then `incomplete` on retry, and is counted as wrong.
 | Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
 | Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |
 | Retrieval strategy | no / single-step / multi-step (IRCoT) | no retrieval and single-step only | multi-step retrieval is out of scope |
-| Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), zero-shot, short-answer prompt, reasoning effort `minimal` | thesis design; cost-sensitive small model |
+| Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), and separately Gemini 2.5 Flash-Lite (`gemini-2.5-flash-lite`, thinking budget 0); zero-shot, short-answer prompt | thesis design; cost-sensitive small models. Gemini logs live under `results/models/` and do not mix with the nano logs |
 | Router | trained T5 query-complexity classifier | none yet; oracle upper bound + the model's own YES/NO decision (`llm_decision`) | learned routers come later |
 
 (Retrieval, generation and evaluation differences are added as those stages are built.)
