@@ -1,0 +1,133 @@
+{
+  "model": "claude-haiku-5-5",
+  "provider": "anthropic",
+  "probed_at": "2026-11-01T19:53:31.979054+00:00",
+  "params": {
+    "temperature": {
+      "value": 0,
+      "accepted": false,
+      "error": "HTTP 400: `temperature` is deprecated for this model.",
+      "response": null
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 4,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "OK"
+          }
+        ],
+        "model": "claude-haiku-5-5"
+      }
+    },
+    "effort": {
+      "value": "low",
+      "accepted": true,
+      "error": null,
+      "response": {
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 4,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "OK"
+          }
+        ],
+        "model": "claude-haiku-5-5"
+      }
+    },
+    "thinking": {
+      "value": "disabled",
+      "accepted": true,
+      "error": null,
+      "response": {
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 16,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 4,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "OK"
+          }
+        ],
+        "model": "claude-haiku-5-5"
+      }
+    }
+  },
+  "bare_request": {
+    "stop_reason": "end_turn",
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 4,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "content": [
+      {
+        "type": "text",
+        "text": "OK"
+      }
+    ],
+    "model": "claude-haiku-5-5"
+  },
+  "lowest_reasoning_effort": "disabled"
+}

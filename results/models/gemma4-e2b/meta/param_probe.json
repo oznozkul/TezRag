@@ -1,0 +1,83 @@
+{
+  "model": "gemma4-e2b",
+  "ollama_tag": "gemma4:e2b",
+  "probed_at": "2026-11-01T20:16:34.549471+00:00",
+  "params": {
+    "temperature": {
+      "value": 0,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 16,
+          "cached_input_tokens": 15,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "gemma4:e2b"
+      }
+    },
+    "max_output_tokens": {
+      "value": 256,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 16,
+          "cached_input_tokens": 15,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "gemma4:e2b"
+      }
+    },
+    "seed": {
+      "value": 42,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 16,
+          "cached_input_tokens": 15,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "gemma4:e2b"
+      }
+    },
+    "think": {
+      "value": false,
+      "accepted": true,
+      "error": null,
+      "response": {
+        "done_reason": "stop",
+        "usage": {
+          "input_tokens": 16,
+          "cached_input_tokens": 15,
+          "output_tokens": 1,
+          "reasoning_tokens": 0
+        },
+        "output_text": "OK",
+        "model": "gemma4:e2b"
+      }
+    }
+  },
+  "reasoning_effort_levels": {},
+  "bare_request": {
+    "done_reason": "stop",
+    "usage": {
+      "input_tokens": 16,
+      "cached_input_tokens": 0,
+      "output_tokens": 1,
+      "reasoning_tokens": 0
+    },
+    "output_text": "OK",
+    "model": "gemma4:e2b"
+  }
+}
