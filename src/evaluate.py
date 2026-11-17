@@ -253,7 +253,9 @@ def run(cfg: Config, dry_run: bool) -> None:
 
     from src.cascade import cascade_markdown
     from src.learned_routers import router_markdown
-    routers_md = router_markdown(out) + "\n" + cascade_markdown(out)
+    from src.consistency import consistency_markdown
+    routers_md = (router_markdown(out) + "\n" + cascade_markdown(out) + "\n"
+                  + consistency_markdown(cfg, dry_run, out))
 
     extra = (_dispatch_markdown(dispatch_df) + "\n" + routers_md + "\n" + judge_md + "\n" + price_markdown(price) + "\n"
              + difficulty_markdown(difficulty, counts) + "\n" + stratum_markdown(strata, compare))

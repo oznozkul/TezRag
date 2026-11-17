@@ -197,7 +197,7 @@ Generation parameters were probed against the API (2026-10-14, `results/meta/par
 | seed | 42 | **rejected** ("Unknown parameter") → dropped, listed in `dropped_params` |
 
 Without temperature or seed control the API is not guaranteed to be deterministic; each prediction is a
-single sample.
+single sample (how much this matters is measured in "Label consistency" below and in Limitations).
 
 Record fields: `qid, dataset, split, system, model, prompt_hash, input_tokens, output_tokens,
 reasoning_tokens, cached_input_tokens, retrieval_ms, llm_ms, total_ms, retrieved_ids, retrieved_scores,
@@ -318,6 +318,15 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   escalator on TF-IDF of question + answer (target `need`). Reports relative cost (dollars, or billed
   tokens for local models) and the break-even escalation rate 1 − cost(llm_only)/cost(always_rag). No
   token log-probabilities were logged, so logprob-based escalation (TARG) is not covered.
+- **Label consistency** ([src/repeat_runs.py](src/repeat_runs.py), [src/consistency.py](src/consistency.py)):
+  `python -m src.repeat_runs --estimate`, then `--yes`, sends the test split's llm_only and always_rag
+  prompts again (2 repeats by default) to `<results root>/repeats/rep<k>/`. Each repeat is checked to be
+  the original prompt byte for byte (same cached passages), so differences come from the model's own
+  sampling. The report adds per-system agreement and Fleiss' kappa, outcome-label stability, the
+  headline numbers per run, and the primary router's result per run.
+- **Router selection before test** (`routers_selection.csv`): 5-fold CV over train + dev only picks
+  the primary router (`embed+bm25` / `need`, the same under both criteria); only its test rows are the
+  reported result.
 - **Cross-model difficulty** ([src/difficulty.py](src/difficulty.py), `difficulty*.csv`): for model m, a
   question's tier is the share of the *other* models with a full run whose llm_only answer is correct
   (very_hard 0, hard ≤ 0.5, medium < 1, easy = all). m's own answer is left out; with it, the tiers
@@ -418,10 +427,19 @@ model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go 
 - **Oracle savings depend on the definition.** The optimistic oracle's savings assume the router knows
   when retrieval will also fail. Claims about what a perfect router can save are made against
   `oracle_realistic`; both are reported.
-- **Router selection on one test set.** Eight routers × two targets × three operating points are
-  reported on the same 599 test questions; a single significant row can be chance. The router
-  family should be fixed on dev or cross-validation first. Accuracy-matched thresholds chosen on the
-  600-question dev set are unstable, which is why the fixed-budget point (`budget_80`) is reported.
+- **Router selection.** The primary router (`embed+bm25` / `need` at the 80% retrieval budget) was
+  fixed by 5-fold CV on train + dev before its test rows were read; the other routers on the same 599
+  test questions are secondary, and a single significant row among them can be chance. The CV margin
+  between the best routers is small (under 0.1 points), so the choice says little about which feature
+  family is better. Accuracy-matched thresholds chosen on the 600-question dev set are unstable, which is
+  why the fixed-budget point (`budget_80`) is reported.
+- **Outcome labels are single samples and partly noisy.** Re-sending the same GPT-5 nano test prompts
+  twice (574 questions, flagged prompts excluded) kept correctness unchanged in all three runs for 84%
+  (llm_only, Fleiss κ 0.75) and 89% (always_rag, κ 0.85) of questions. Aggregates barely move (Always-RAG
+  0.430–0.436, realistic oracle 0.491–0.505, primary router −1.2 to 0.0 points), but per-question labels
+  do: only 44% of original `rag_hurts` labels recur in a repeat, against 92% for `both_fail`. Routers
+  trained on `rag_hurts`-type targets learn partly from noise, and the oracle's skip opportunity is
+  partly a sampling effect. Only nano was repeated; the other models' labels are assumed similar.
 - **The cascade uses text signals only.** The logs hold no token log-probabilities, so the learned
   cascade sees the answer text, not the model's confidence; TARG-style logprob gating would need new
   llm_only runs with logprobs (free for the local models).

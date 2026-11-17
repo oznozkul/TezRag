@@ -242,6 +242,25 @@ Sent means a call was logged. Both paths call the model; `route` on `llm_decisio
 
 ## Routers without an LLM call
 
+**Primary router: `embed+bm25` / target `need`**, chosen before reading test: 5-fold cross-validation over train + dev only, accuracy at an 80% retrieval budget minus Always-RAG, averaged over models (`routers_selection.csv`; best +0.0008, next `bm25`/need +0.0006). Test results (threshold = dev quantile for 80% retrieval):
+
+| model | criterion | retrieval rate | acc − Always-RAG [95% CI] | token saving | $ saving | acc − random skip |
+|---|---|---|---|---|---|---|
+| claude-haiku-5-5 | accuracy | 0.812 | +0.002 [-0.013, +0.017] | 0.186 | 0.170 | 0.015 |
+| claude-haiku-5-5 | judge | 0.828 | +0.010 [-0.003, +0.023] | 0.172 | 0.158 | 0.025 |
+| deepseek-flash | accuracy | 0.815 | +0.018 [+0.005, +0.033] | 0.178 | 0.174 | 0.024 |
+| deepseek-flash | judge | 0.783 | +0.017 [-0.002, +0.035] | 0.219 | 0.216 | 0.024 |
+| gemma4-e2b | accuracy | 0.802 | +0.003 [-0.010, +0.017] | 0.180 | — | 0.028 |
+| gemma4-e2b | judge | 0.805 | -0.012 [-0.030, +0.007] | 0.173 | — | 0.022 |
+| gpt-5-nano-2025-08-07 | accuracy | 0.801 | +0.002 [-0.015, +0.018] | 0.191 | 0.151 | 0.024 |
+| gpt-5-nano-2025-08-07 | judge | 0.800 | -0.012 [-0.030, +0.007] | 0.188 | 0.145 | 0.011 |
+| llama3.2-3b | accuracy | 0.795 | -0.007 [-0.022, +0.007] | 0.182 | — | 0.017 |
+| llama3.2-3b | judge | 0.803 | -0.017 [-0.035, +0.000] | 0.171 | — | 0.015 |
+| qwen3.5-4b | accuracy | 0.805 | -0.007 [-0.020, +0.007] | 0.180 | — | 0.029 |
+| qwen3.5-4b | judge | 0.822 | -0.002 [-0.017, +0.013] | 0.165 | — | 0.033 |
+
+Secondary: every router at the same point (read only as context; not the reported result):
+
 Trained on train, threshold on dev, reported on test (599 questions per model); no new API calls, router cost $0. Target `need` = retrieval_needed (skip score 1 − P); `lo_correct` = llm_only correct. Cells: test accuracy − Always-RAG [paired 95% CI] · share of tokens saved, at the `budget_80` point (threshold = the dev score quantile that retrieves for 80% of dev questions). All operating points, both targets and the random baseline: `routers_test.csv`; 5-fold budget curves: `routers_cv_budget.csv`.
 
 | model | dataset_prior | rules | bm25 | rules+bm25 | tfidf | embed | knn | embed+bm25 |
@@ -264,7 +283,7 @@ Same table with the LLM judge's verdicts as `correct` (labels, training and eval
 | llama3.2-3b | -0.018 [-0.042, +0.003] · 29% | -0.042 [-0.060, -0.025] · 17% | -0.018 [-0.037, -0.002] · 18% | -0.017 [-0.033, +0.000] · 16% | -0.018 [-0.035, -0.003] · 15% | -0.015 [-0.033, +0.003] · 18% | -0.010 [-0.027, +0.007] · 19% | -0.017 [-0.035, +0.000] · 17% |
 | qwen3.5-4b | -0.053 [-0.075, -0.032] · 32% | -0.027 [-0.047, -0.008] · 18% | -0.022 [-0.040, -0.005] · 18% | -0.017 [-0.032, -0.002] · 16% | -0.030 [-0.048, -0.013] · 19% | -0.012 [-0.028, +0.003] · 18% | -0.052 [-0.077, -0.027] · 35% | -0.002 [-0.017, +0.013] · 17% |
 
-Router compute per question (ms, CPU; fit + predict over all questions, plus embedding at batch 1 for embedding routers): dataset_prior 0.0, rules 0.0, bm25 0.0, rules+bm25 0.0, tfidf 0.0, embed 9.8, knn 9.8, embed+bm25 9.8.
+Router compute per question (ms, CPU; fit + predict over all questions, plus embedding at batch 1 for embedding routers): dataset_prior 0.0, rules 0.0, bm25 0.0, rules+bm25 0.0, tfidf 0.0, embed 11.2, knn 11.2, embed+bm25 11.2.
 
 5-fold cross-validated ROC-AUC of the router's probability for its target:
 
@@ -310,6 +329,41 @@ Correct = LLM judge:
 | gemma4-e2b | tokens | 0.927 | +0.095 [+0.072, +0.118] · cost 0.85 · esc 77% | -0.162 [-0.207, -0.117] · cost 0.14 · esc 7% | -0.012 [-0.023, -0.002] · cost 0.99 · esc 91% | -0.017 [-0.033, +0.000] · cost 0.90 · esc 83% | -0.037 [-0.063, -0.008] · cost 0.68 · esc 61% | -0.085 [-0.120, -0.048] · cost 0.44 · esc 38% |
 | llama3.2-3b | tokens | 0.902 | +0.087 [+0.065, +0.110] · cost 0.83 · esc 73% | -0.157 [-0.200, -0.113] · cost 0.12 · esc 2% | +0.000 [-0.005, +0.005] · cost 1.09 · esc 99% | -0.020 [-0.037, -0.003] · cost 0.92 · esc 82% | -0.037 [-0.063, -0.012] · cost 0.75 · esc 65% | -0.080 [-0.115, -0.045] · cost 0.49 · esc 39% |
 | qwen3.5-4b | tokens | 0.923 | +0.063 [+0.045, +0.083] · cost 0.83 · esc 75% | -0.193 [-0.237, -0.152] · cost 0.08 · esc 0% | +0.000 [+0.000, +0.000] · cost 1.08 · esc 100% | -0.027 [-0.045, -0.010] · cost 0.88 · esc 81% | -0.037 [-0.063, -0.012] · cost 0.69 · esc 62% | -0.088 [-0.123, -0.055] · cost 0.48 · esc 40% |
+
+## Label consistency (repeated runs)
+
+Same prompts sent again (3 runs per question incl. the original, split as repeated). Differences come from the model's own sampling; retrieval is identical (cached passages, checked).
+
+| model | system | n | runs | same correctness in all runs | Fleiss κ | acc min | acc max |
+|---|---|---|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | llm_only | 574 | 3 | 0.840 | 0.746 | 0.282 | 0.315 |
+| gpt-5-nano-2025-08-07 | always_rag | 574 | 3 | 0.890 | 0.851 | 0.430 | 0.436 |
+
+Outcome labels: share identical in every run, and how often an original label recurs in the repeats:
+
+| model | original label | n | same in all runs | recurs in repeats |
+|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | ALL | 574 | 0.765 | — |
+| gpt-5-nano-2025-08-07 | both_ok | 139 | 0.727 | 0.799 |
+| gpt-5-nano-2025-08-07 | rag_hurts | 42 | 0.310 | 0.440 |
+| gpt-5-nano-2025-08-07 | retrieval_needed | 109 | 0.688 | 0.766 |
+| gpt-5-nano-2025-08-07 | both_fail | 284 | 0.880 | 0.921 |
+
+Headline numbers per run:
+
+| model | run | llm_only | always_rag | RAG gain | oracle | rag_hurts | both_fail |
+|---|---|---|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | original | 0.315 | 0.432 | 0.117 | 0.505 | 0.073 | 0.495 |
+| gpt-5-nano-2025-08-07 | rep1 | 0.303 | 0.430 | 0.127 | 0.491 | 0.061 | 0.509 |
+| gpt-5-nano-2025-08-07 | rep2 | 0.282 | 0.436 | 0.153 | 0.495 | 0.059 | 0.505 |
+
+Primary router (decisions fixed) applied to each run's answers:
+
+| model | router | run | n | retrieval rate | acc − Always-RAG |
+|---|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | embed+bm25/need | original | 574 | 0.801 | 0.000 |
+| gpt-5-nano-2025-08-07 | embed+bm25/need | rep1 | 574 | 0.801 | -0.012 |
+| gpt-5-nano-2025-08-07 | embed+bm25/need | rep2 | 574 | 0.801 | -0.009 |
 
 ## Second correctness criterion: LLM judge
 

@@ -1,0 +1,4 @@
+model,router,run,n,retrieval_rate,acc_minus_always
+gpt-5-nano-2025-08-07,embed+bm25/need,original,574,0.8013937282229965,0.0
+gpt-5-nano-2025-08-07,embed+bm25/need,rep1,574,0.8013937282229965,-0.012195121951219523
+gpt-5-nano-2025-08-07,embed+bm25/need,rep2,574,0.8013937282229965,-0.008710801393728207

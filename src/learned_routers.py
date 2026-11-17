@@ -34,7 +34,15 @@ Operating points chosen on dev:
             than accuracy-matched points on a 600-question dev set)
 Random baseline = skipping the same share of questions at random (expected value, exact).
 
-Writes results/summary/routers_test.csv, routers_cv_budget.csv, routers_auc.csv, routers_dev_curve.csv.
+Router selection (fixed before reading test): 5-fold cross-validation over train + dev only (test
+questions never enter), out-of-fold scores, accuracy at an 80% retrieval budget minus Always-RAG on
+those same questions, averaged over the six models. The best (router, target) under the main
+criterion (accuracy) is the primary router; its test rows are the reported result, under both
+criteria. The other routers stay in the CSVs as secondary results. The older cross-validation over
+all questions (routers_cv_budget.csv) includes test questions and is descriptive only.
+
+Writes results/summary/routers_test.csv, routers_cv_budget.csv, routers_auc.csv, routers_dev_curve.csv,
+routers_selection.csv.
 """
 from __future__ import annotations
 
@@ -65,6 +73,7 @@ TARGETS = ("lo_correct", "need")
 ROUTERS = ("dataset_prior", "rules", "bm25", "rules+bm25", "tfidf", "embed", "knn", "embed+bm25")
 EMBED_ROUTERS = {"embed", "knn", "embed+bm25"}
 BUDGETS = (1.0, 0.9, 0.8, 0.7, 0.6, 0.5)
+SELECTION_BUDGET = 0.8
 KNN_K = 15
 
 
@@ -292,7 +301,7 @@ def run(cfg: Config, dry_run: bool, criterion: str = "accuracy") -> dict[str, pd
     embed_ms = embed_ms_per_question(cfg, [all_q[q] for q in qids])
     log.info("embedding cost: %.1f ms per question (CPU, batch 1)", embed_ms)
 
-    tests, budgets, aucs, curves = [], [], [], []
+    tests, budgets, aucs, curves, selection = [], [], [], [], []
     for model, t in tables.items():
         feats = feature_frames(t)
         emb = emb_all[[emb_index[q] for q in t.qid]]
@@ -322,12 +331,36 @@ def run(cfg: Config, dry_run: bool, criterion: str = "accuracy") -> dict[str, pd
                     mask[tr_idx] = True
                     oof[te_idx] = fit_predict(name, tt, feats, emb, mask, cfg.seed)[te_idx]
                 budgets += budget_rows(model, name, t, skip_score(oof, target), target)
+                # selection CV: test questions excluded entirely
+                nt = (t.split != "test").to_numpy()
+                tn = t[nt].reset_index(drop=True)
+                ttn = tt[nt].reset_index(drop=True)
+                fn = {k: v[nt].reset_index(drop=True) for k, v in feats.items()}
+                oof_n = np.zeros(len(tn))
+                strat_n = tn.dataset + "_" + label[nt].astype(str).to_numpy()
+                for tr_idx, te_idx in StratifiedKFold(5, shuffle=True, random_state=cfg.seed).split(tn, strat_n):
+                    mask = np.zeros(len(tn), bool)
+                    mask[tr_idx] = True
+                    oof_n[te_idx] = fit_predict(name, ttn, fn, emb[nt], mask, cfg.seed)[te_idx]
+                b = [r for r in budget_rows(model, name, tn, skip_score(oof_n, target), target)
+                     if r["retrieval_budget"] == SELECTION_BUDGET][0]
+                selection.append({"model": model, "router": name, "target": target,
+                                  "acc_minus_always": b["accuracy"] - b["always_rag_accuracy"],
+                                  "acc_minus_random": b["accuracy"] - b["random_accuracy"],
+                                  "token_saving": b["token_saving"]})
                 aucs.append({"model": model, "router": name, "target": target,
                              "cv_auc": float(roc_auc_score(label, oof)) if label.nunique() == 2 else float("nan"),
                              "base_rate": float(label.mean())})
         log.info("%s: done", model)
 
+    sel = pd.DataFrame(selection)
+    mean = sel.groupby(["router", "target"]).acc_minus_always.mean().rename("mean_acc_minus_always")
+    sel = sel.merge(mean.reset_index(), on=["router", "target"])
+    best = mean.idxmax()
+    sel["primary"] = (sel.router == best[0]) & (sel.target == best[1])
+    log.info("primary router (train+dev CV, %s): %s / %s (mean %+.4f)", criterion, best[0], best[1], mean.max())
     res = {"routers_test": pd.DataFrame(tests), "routers_cv_budget": pd.DataFrame(budgets),
+           "routers_selection": sel,
            "routers_auc": pd.DataFrame(aucs), "routers_dev_curve": pd.concat(curves, ignore_index=True)}
     out = cfg.path("results", dry_run) / "summary"
     out.mkdir(parents=True, exist_ok=True)
@@ -382,8 +415,37 @@ def router_markdown(summary_dir) -> str:
     auc = a.pivot_table(index=["model", "target"], columns="router", values="cv_auc").reset_index()
     acols = [("model", "model", None), ("target", "target", None)] + [(r, r, 3) for r in ROUTERS if r in auc.columns]
     ms = t.groupby("router").router_ms_per_q.mean()
+    primary_part = []
+    sel_path = Path(summary_dir) / "routers_selection.csv"
+    if sel_path.exists():
+        sel = pd.read_csv(sel_path)
+        pr = sel[sel.primary].iloc[0]
+        rows = []
+        for crit, f in (("accuracy", path), ("judge", judge_path)):
+            if not Path(f).exists():
+                continue
+            d = pd.read_csv(f)
+            d = d[(d.router == pr.router) & (d.target == pr.target) & (d.point == "budget_80")]
+            for r in d.itertuples():
+                rows.append({"model": r.model, "criterion": crit, "retrieval_rate": r.retrieval_rate,
+                             "acc": f"{r.acc_diff:+.3f} [{r.acc_ci_lo:+.3f}, {r.acc_ci_hi:+.3f}]",
+                             "token_saving": r.token_saving, "usd_saving": r.usd_saving,
+                             "vs_random": r.acc_minus_random})
+        prim = pd.DataFrame(rows).sort_values(["model", "criterion"])
+        ranking = sel.groupby(["router", "target"]).mean_acc_minus_always.first().sort_values(ascending=False)
+        primary_part = [
+            f"**Primary router: `{pr.router}` / target `{pr.target}`**, chosen before reading test: 5-fold "
+            "cross-validation over train + dev only, accuracy at an 80% retrieval budget minus Always-RAG, "
+            f"averaged over models (`routers_selection.csv`; best {ranking.iloc[0]:+.4f}, next "
+            f"`{ranking.index[1][0]}`/{ranking.index[1][1]} {ranking.iloc[1]:+.4f}). Test results "
+            "(threshold = dev quantile for 80% retrieval):", "",
+            md_table(prim, [("model", "model", None), ("criterion", "criterion", None),
+                            ("retrieval_rate", "retrieval rate", 3), ("acc", "acc − Always-RAG [95% CI]", None),
+                            ("token_saving", "token saving", 3), ("usd_saving", "$ saving", 3),
+                            ("vs_random", "acc − random skip", 3)]), "",
+            "Secondary: every router at the same point (read only as context; not the reported result):", ""]
     return "\n".join([
-        "## Routers without an LLM call", "",
+        "## Routers without an LLM call", "", *primary_part,
         "Trained on train, threshold on dev, reported on test (599 questions per model); no new API calls, "
         "router cost $0. Target `need` = retrieval_needed (skip score 1 − P); `lo_correct` = llm_only correct. "
         "Cells: test accuracy − Always-RAG [paired 95% CI] · share of tokens saved, at the `budget_80` point "
