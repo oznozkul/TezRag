@@ -251,8 +251,9 @@ def run(cfg: Config, dry_run: bool) -> None:
     from src.judge_eval import judge_section
     judge_md = judge_section(cfg, dry_run, bundles, frames, out, shared)
 
+    from src.cascade import cascade_markdown
     from src.learned_routers import router_markdown
-    routers_md = router_markdown(out)
+    routers_md = router_markdown(out) + "\n" + cascade_markdown(out)
 
     extra = (_dispatch_markdown(dispatch_df) + "\n" + routers_md + "\n" + judge_md + "\n" + price_markdown(price) + "\n"
              + difficulty_markdown(difficulty, counts) + "\n" + stratum_markdown(strata, compare))

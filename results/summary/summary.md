@@ -285,6 +285,32 @@ Router compute per question (ms, CPU; fit + predict over all questions, plus emb
 
 Caveat: several routers are compared on the same test set; choose the router on dev or cross-validation before reading its test row, and treat single significant rows with care.
 
+## Answer-first cascade (no extra API calls)
+
+Every question is first answered without retrieval; it is escalated to Always-RAG only when that answer looks unreliable, and otherwise that answer is final (Dong et al. 2026; TARG). Cost = llm_only call + always_rag call when escalated, relative to Always-RAG (dollars for priced models, billed tokens for local ones); cost < 1 saves. `break-even esc.` = 1 − cost(llm_only)/cost(always_rag): escalating more than this share costs more than Always-RAG. Cells: test accuracy − Always-RAG [paired 95% CI] · relative cost · escalation rate. `learned` points: `no_loss` = dev-accuracy-matched threshold, `escalate_N` = escalate N% of dev questions.
+
+Correct = accuracy:
+
+| model | unit | break-even esc. | oracle:oracle | abstain:rule | learned:no_loss | learned:escalate_80 | learned:escalate_60 | learned:escalate_40 |
+|---|---|---|---|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | usd | 0.708 | +0.075 [+0.055, +0.097] · cost 0.98 · esc 69% | -0.107 [-0.145, -0.068] · cost 0.41 · esc 11% | -0.003 [-0.008, +0.000] · cost 1.28 · esc 99% | -0.015 [-0.028, -0.002] · cost 1.13 · esc 84% | -0.043 [-0.067, -0.020] · cost 0.90 · esc 61% | -0.070 [-0.100, -0.042] · cost 0.69 · esc 40% |
+| claude-haiku-5-5 | usd | 0.839 | +0.092 [+0.068, +0.115] · cost 0.76 · esc 61% | -0.022 [-0.057, +0.013] · cost 0.41 · esc 25% | -0.010 [-0.038, +0.018] · cost 0.57 · esc 42% | +0.005 [-0.010, +0.020] · cost 0.98 · esc 82% | -0.008 [-0.030, +0.013] · cost 0.75 · esc 60% | -0.013 [-0.042, +0.015] · cost 0.54 · esc 39% |
+| deepseek-flash | usd | 0.918 | +0.093 [+0.070, +0.118] · cost 0.62 · esc 55% | -0.030 [-0.068, +0.008] · cost 0.09 · esc 1% | -0.003 [-0.015, +0.008] · cost 0.94 · esc 86% | -0.007 [-0.020, +0.007] · cost 0.91 · esc 83% | -0.008 [-0.030, +0.013] · cost 0.69 · esc 62% | -0.027 [-0.055, +0.002] · cost 0.46 · esc 39% |
+| gemma4-e2b | tokens | 0.927 | +0.077 [+0.057, +0.098] · cost 0.92 · esc 85% | -0.120 [-0.160, -0.080] · cost 0.14 · esc 7% | -0.005 [-0.013, +0.002] · cost 1.02 · esc 95% | -0.012 [-0.027, +0.002] · cost 0.88 · esc 82% | -0.028 [-0.050, -0.007] · cost 0.68 · esc 61% | -0.047 [-0.077, -0.017] · cost 0.45 · esc 39% |
+| llama3.2-3b | tokens | 0.902 | +0.075 [+0.055, +0.097] · cost 0.87 · esc 77% | -0.112 [-0.152, -0.073] · cost 0.12 · esc 2% | -0.005 [-0.017, +0.005] · cost 0.99 · esc 88% | -0.008 [-0.023, +0.005] · cost 0.90 · esc 80% | -0.032 [-0.053, -0.012] · cost 0.73 · esc 63% | -0.037 [-0.065, -0.008] · cost 0.54 · esc 44% |
+| qwen3.5-4b | tokens | 0.923 | +0.053 [+0.037, +0.072] · cost 0.87 · esc 80% | -0.182 [-0.222, -0.142] · cost 0.08 · esc 0% | +0.000 [+0.000, +0.000] · cost 1.07 · esc 99% | -0.030 [-0.048, -0.013] · cost 0.87 · esc 80% | -0.052 [-0.075, -0.028] · cost 0.68 · esc 61% | -0.082 [-0.113, -0.052] · cost 0.48 · esc 40% |
+
+Correct = LLM judge:
+
+| model | unit | break-even esc. | oracle:oracle | abstain:rule | learned:no_loss | learned:escalate_80 | learned:escalate_60 | learned:escalate_40 |
+|---|---|---|---|---|---|---|---|---|
+| gpt-5-nano-2025-08-07 | usd | 0.708 | +0.097 [+0.073, +0.122] · cost 0.92 · esc 63% | -0.097 [-0.139, -0.055] · cost 0.41 · esc 11% | +0.000 [+0.000, +0.000] · cost 1.29 · esc 100% | -0.017 [-0.033, +0.000] · cost 1.10 · esc 81% | -0.047 [-0.072, -0.022] · cost 0.87 · esc 58% | -0.078 [-0.110, -0.045] · cost 0.68 · esc 39% |
+| claude-haiku-5-5 | usd | 0.839 | +0.105 [+0.082, +0.130] · cost 0.68 · esc 52% | -0.042 [-0.078, -0.005] · cost 0.41 · esc 25% | -0.027 [-0.055, +0.002] · cost 0.60 · esc 44% | -0.010 [-0.027, +0.007] · cost 0.98 · esc 82% | -0.010 [-0.033, +0.013] · cost 0.77 · esc 61% | -0.022 [-0.050, +0.008] · cost 0.58 · esc 42% |
+| deepseek-flash | usd | 0.918 | +0.115 [+0.090, +0.140] · cost 0.53 · esc 46% | -0.033 [-0.075, +0.008] · cost 0.09 · esc 1% | +0.003 [-0.018, +0.025] · cost 0.72 · esc 64% | +0.000 [-0.015, +0.013] · cost 0.89 · esc 81% | +0.002 [-0.020, +0.023] · cost 0.72 · esc 64% | -0.020 [-0.050, +0.010] · cost 0.46 · esc 39% |
+| gemma4-e2b | tokens | 0.927 | +0.095 [+0.072, +0.118] · cost 0.85 · esc 77% | -0.162 [-0.207, -0.117] · cost 0.14 · esc 7% | -0.012 [-0.023, -0.002] · cost 0.99 · esc 91% | -0.017 [-0.033, +0.000] · cost 0.90 · esc 83% | -0.037 [-0.063, -0.008] · cost 0.68 · esc 61% | -0.085 [-0.120, -0.048] · cost 0.44 · esc 38% |
+| llama3.2-3b | tokens | 0.902 | +0.087 [+0.065, +0.110] · cost 0.83 · esc 73% | -0.157 [-0.200, -0.113] · cost 0.12 · esc 2% | +0.000 [-0.005, +0.005] · cost 1.09 · esc 99% | -0.020 [-0.037, -0.003] · cost 0.92 · esc 82% | -0.037 [-0.063, -0.012] · cost 0.75 · esc 65% | -0.080 [-0.115, -0.045] · cost 0.49 · esc 39% |
+| qwen3.5-4b | tokens | 0.923 | +0.063 [+0.045, +0.083] · cost 0.83 · esc 75% | -0.193 [-0.237, -0.152] · cost 0.08 · esc 0% | +0.000 [+0.000, +0.000] · cost 1.08 · esc 100% | -0.027 [-0.045, -0.010] · cost 0.88 · esc 81% | -0.037 [-0.063, -0.012] · cost 0.69 · esc 62% | -0.088 [-0.123, -0.055] · cost 0.48 · esc 40% |
+
 ## Second correctness criterion: LLM judge
 
 Judge `gpt-5-nano-2025-08-07` reads the question, the gold answers and one prediction and replies CORRECT or INCORRECT. `judge only` = judge correct, accuracy wrong (what accuracy misses); `accuracy only` = the reverse.

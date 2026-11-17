@@ -311,6 +311,13 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   $0 and its CPU time is reported. The embedding model (BAAI/bge-small-en-v1.5, 137 MB) is read from
   `cache/hf` with `local_files_only`; download it once with `huggingface_hub.snapshot_download`.
   `--criterion judge` repeats everything with the LLM judge's verdicts as `correct` (`*_judge.csv`).
+- **Answer-first cascade** ([src/cascade.py](src/cascade.py); `python -m src.cascade [--criterion judge]`):
+  answer without retrieval first, escalate to Always-RAG only when that answer looks unreliable,
+  otherwise keep it (the design of Dong et al. 2026 and TARG). Composed from the logged answers, no
+  API calls. Policies: oracle (escalate iff the answer is wrong), an abstain/hedge rule, and a learned
+  escalator on TF-IDF of question + answer (target `need`). Reports relative cost (dollars, or billed
+  tokens for local models) and the break-even escalation rate 1 − cost(llm_only)/cost(always_rag). No
+  token log-probabilities were logged, so logprob-based escalation (TARG) is not covered.
 - **Cross-model difficulty** ([src/difficulty.py](src/difficulty.py), `difficulty*.csv`): for model m, a
   question's tier is the share of the *other* models with a full run whose llm_only answer is correct
   (very_hard 0, hard ≤ 0.5, medium < 1, easy = all). m's own answer is left out; with it, the tiers
@@ -415,6 +422,9 @@ model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go 
   reported on the same 599 test questions; a single significant row can be chance. The router
   family should be fixed on dev or cross-validation first. Accuracy-matched thresholds chosen on the
   600-question dev set are unstable, which is why the fixed-budget point (`budget_80`) is reported.
+- **The cascade uses text signals only.** The logs hold no token log-probabilities, so the learned
+  cascade sees the answer text, not the model's confidence; TARG-style logprob gating would need new
+  llm_only runs with logprobs (free for the local models).
 - **Difficulty tiers depend on the model pool.** They come from six models of similar size (small API
   models and 2–4B local models). A different pool would move questions between tiers. Each question has
   one sample per model, so tiers inherit the label noise of single samples.

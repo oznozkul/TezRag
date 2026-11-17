@@ -105,6 +105,9 @@ def model_tables(cfg: Config, dry_run: bool, criterion: str = "accuracy") -> dic
             "tok_ar": (ar.loc[lo.index].billed_input_tokens + ar.loc[lo.index].billed_output_tokens).values,
         })
         t["question"] = [kept[q]["question"] for q in t.qid]
+        t["lo_pred"] = [(recs["llm_only"][q].get("prediction") or "") if recs["llm_only"][q]["error"] is None
+                        else "" for q in t.qid]
+        t["lo_failed"] = [recs["llm_only"][q]["error"] is not None for q in t.qid]
         t["bm25_scores"] = [recs["always_rag"][q].get("retrieved_scores") or [] for q in t.qid]
         t["rag_prompt"] = [recs["always_rag"][q].get("prompt") or "" for q in t.qid]
         out[model] = t.reset_index(drop=True)
