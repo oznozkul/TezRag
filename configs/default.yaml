@@ -87,6 +87,15 @@ eval:
   bootstrap_samples: 10000
   ci: 0.95
 
+# Semantic correctness check (python -m src.judge). The judge reads question, gold answers and one
+# logged prediction and replies CORRECT or INCORRECT. It is a second criterion next to accuracy,
+# validated against a hand-labelled sample (python -m src.annotation).
+judge:
+  model: gpt-5-nano-2025-08-07
+  prompt: prompts/judge.txt
+  max_golds: 10                   # gold aliases shown to the judge (primary answers first)
+  systems: [llm_only, always_rag]
+
 pricing:
   gpt-5-nano-2025-08-07:
     input_per_1m: 0.05

@@ -2,7 +2,7 @@
 
 Infrastructure for a master's thesis on adaptive retrieval-augmented generation: a router decides,
 per question, whether to retrieve. This repository holds the data preparation, BM25 retrieval, the
-two baseline systems (`llm_only`, `always_rag`), evaluation, and the oracle router (upper bound).
+two baseline systems (`llm_only`, `always_rag`), evaluation, and two oracle routes (upper bounds).
 Learned routers are out of scope for now; the record schema already has fields for them.
 
 The setup follows Adaptive-RAG (Jeong et al., NAACL 2024, <https://github.com/starsuzi/Adaptive-RAG>)
@@ -256,19 +256,68 @@ flagged, then `incomplete` on retry, and is counted as wrong.
 - **Common question set**: a qid whose prompt was rejected by the filter twice in any system is removed
   from all systems (`excluded_qids.csv`).
 - **Metrics**: SQuAD-normalized EM, F1, accuracy (token-bounded containment), max over gold variants;
-  "correct" = `eval.correct_metric` (default accuracy). Two answer sets: `all` (main) and `adaptive_rag`
+  "correct" = `eval.correct_metric` (default accuracy). Normalization also drops an English possessive
+  `'s` and treats typographic quotes as punctuation, so the gold "Christopher Marlowe 's" matches
+  "Christopher Marlowe" (2026-11-17; moved pooled nano accuracy by +0.1 to +0.3 points). Two answer sets: `all` (main) and `adaptive_rag`
   (comparison, see [Answer-variant policy](#answer-variant-policy)).
 - **Outcome labels** (`question_labels.jsonl`, `labels.csv`): `both_ok`, `rag_hurts`, `retrieval_needed`,
   `both_fail` (`no_retrieval_ok` = both_ok + rag_hurts), per dataset and split.
-- **Composed systems** ([src/routers/](src/routers/__init__.py)), no extra API calls:
-  `oracle` (llm_only if correct, else always_rag; both wrong → llm_only) and `llm_decision_router`
-  (YES → llm_only, NO/invalid → always_rag; decision call charged as router cost).
+- **Composed systems** ([src/routers.py](src/routers.py)), no extra API calls:
+  - `oracle_optimistic`: llm_only if correct, else always_rag; both wrong → llm_only, the cheaper path.
+    This is the cheapest route at oracle accuracy. It assumes the router knows that retrieval will fail
+    too, so its savings are an optimistic bound.
+  - `oracle_realistic`: llm_only only if it is correct; otherwise, including both wrong, always_rag.
+    Same accuracy, higher cost. This is Adaptive-RAG's labelling rule (unanswered queries get a
+    retrieval label, never "no retrieval") and the target a learned router is trained on.
+  - `llm_decision_router`: YES → llm_only, NO/invalid → always_rag; the decision call is charged as
+    router cost.
+
+  Both oracles read the gold answers. They are upper bounds and training labels, not routers.
 - **Cost** per component (`retrieval_usd` = 0 for local BM25, `generation_usd`, `router_usd`), prices
   and their date from the config.
-- **Decision analysis**: YES/NO/invalid, agreement with the oracle route, confusion matrix,
-  P(llm_only correct | YES).
+- **Decision analysis**: YES/NO/invalid, agreement with both oracle routes, confusion matrix against the
+  realistic oracle, P(llm_only correct | YES).
 - **Break-even**: decision cost vs. context tokens and money saved on skipped retrievals, and the skip
   rate the router would need to break even.
+- **Price sensitivity** (`price_sensitivity.csv`): cost relative to Always-RAG for both oracles, the
+  decision router, and `oracle_realistic+decision` (a router that is always right but pays one decision
+  call per question), with output priced at 1×, 4×, 8× input and at each model's own ratio. Computed
+  from logged tokens, so no new calls; the relative cost does not depend on the absolute price, so local
+  models are included. Cached-input discounts are ignored.
+- **Second correctness criterion** ([src/judge.py](src/judge.py), [src/judge_eval.py](src/judge_eval.py)):
+  an LLM judge (`judge.model`, prompt `prompts/judge.txt`) reads the question, up to 10 gold answers
+  (primary first) and one logged prediction, and replies CORRECT or INCORRECT. Logs:
+  `results/judge/<judge>/<answer model>/<system>.jsonl`, append-only and resumable; the answer logs
+  are only read. `python -m src.judge --estimate` prints the pending calls and the cost without calling.
+  When a model is fully judged, evaluate rebuilds every system with the verdict as `correct` (answer
+  set `judge`) and reports the main differences under both criteria (`judge_compare.csv`) and where
+  the two disagree (`judge_disagreement.csv`). Failed answer calls stay wrong; an unparseable verdict
+  counts as wrong.
+- **Hand-labelled validation** ([src/annotation.py](src/annotation.py)): 200 answers from the six
+  complete runs, stratified by dataset × accuracy verdict, seed 42, in `results/annotation/sheet.csv`
+  (semicolon CSV; model, system and automatic verdicts hidden). Labels 1 / 0 / ?; grade against the
+  gold, mark outdated golds in the note. `python -m src.annotation --report` and the summary report
+  agreement, Cohen's kappa, and population-reweighted missed-correct and accepted-wrong rates for
+  accuracy and for the judge (`annotation_agreement.csv`). A model may label the same items into
+  `labels_<name>.csv`; `labels_claude-opus-5-5.csv` holds labels written by Claude Opus 5.5
+  (2026-11-17). They are a strong-model reference, reported under that name, never as human labels;
+  hand labels in `sheet.csv` are compared with them when present.
+- **Routers without an LLM call** ([src/learned_routers.py](src/learned_routers.py),
+  [src/router_features.py](src/router_features.py); `python -m src.learned_routers`, then evaluate):
+  dataset prior, question-text rules, BM25 retrieval scores, TF-IDF, bge-small embeddings, kNN, and
+  combinations, each trained per answer model on train, threshold on dev, reported on test, plus 5-fold
+  budget curves and ROC-AUC. Two targets: `lo_correct` and `need` (retrieval_needed; questions both paths
+  miss count as safe to skip). Routed systems reuse the logged answers, so no API calls; router cost is
+  $0 and its CPU time is reported. The embedding model (BAAI/bge-small-en-v1.5, 137 MB) is read from
+  `cache/hf` with `local_files_only`; download it once with `huggingface_hub.snapshot_download`.
+  `--criterion judge` repeats everything with the LLM judge's verdicts as `correct` (`*_judge.csv`).
+- **Cross-model difficulty** ([src/difficulty.py](src/difficulty.py), `difficulty*.csv`): for model m, a
+  question's tier is the share of the *other* models with a full run whose llm_only answer is correct
+  (very_hard 0, hard ≤ 0.5, medium < 1, easy = all). m's own answer is left out; with it, the tiers
+  would be circular (llm_only accuracy high on "easy" questions by construction, and retrieval gain
+  pushed negative by selection). Reported per model and tier: accuracy of every system, the paired
+  retrieval gain with CI, and the llm_decision YES rate. Tiers use gold answers and other models'
+  outputs, so they are an analysis variable, never a router feature. Needs at least three full runs.
 - **Latency**: sequential run only; adaptive = decision call + chosen path, compared with Always-RAG and
   LLM-only (paired bootstrap on mean and median).
 - **Bootstrap**: 10,000 paired resamples over questions, stratified by dataset for pooled rows, 95%
@@ -289,8 +338,9 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   field; the cut is a tertile of `log10(s_pop)` on the frozen 500, edges written once, low = least
   popular. 2Wiki `type` is a reasoning type (compositional, comparison, bridge_comparison, inference).
   NQ and TriviaQA have no source difficulty field; they appear only under `hop_type` (single / multi),
-  the only cut defined for every question. A second model is not asked to judge difficulty, and
-  outcome labels (`both_fail`, `rag_hurts`, and the rest) stay outcomes. The nano report states where
+  the only cut defined for every question. No model is asked to judge difficulty, and outcome labels
+  (`both_fail`, `rag_hurts`, and the rest) stay outcomes. The one difficulty scale in the report is the
+  cross-model tier above, which is derived from the other models' answers. The nano report states where
   these cuts move accuracy and whether the decision router beats Always-RAG inside them.
 
 Gemini 3.5 Flash-Lite uses the same prompts, the same BM25 cache, and the same three call types.
@@ -331,14 +381,17 @@ model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go 
 | Single-hop datasets | NQ, TriviaQA, SQuAD | NQ, TriviaQA, **PopQA** | Thesis design; PopQA probes long-tail knowledge where retrieval matters most |
 | Sampling | 500 test per dataset, seed 13370, + separate dev sample | 500 per dataset from the same pools, seed 42, split 300/100/100 | One fixed sample with train/dev for future routers |
 | Answer variants (2Wiki, MuSiQue) | IRCoT keeps one gold span | gold + aliases (`answers`); primary kept in `answers_primary` | Task requires all valid variants |
-| Accuracy | normalized gold is a substring of the prediction | normalized gold occurs as whole tokens in the prediction; aliases ≤ 2 chars ignored (primary kept) | avoids false matches of short aliases (`ca` in `canada`, `in` in "born in") |
+| Accuracy | normalized gold is a substring of the prediction | normalized gold occurs as whole tokens in the prediction; aliases ≤ 2 chars ignored (primary kept); possessive `'s` dropped in normalization | avoids false matches of short aliases (`ca` in `canada`, `in` in "born in") |
+| Correctness check | none | second criterion: LLM judge, validated on 200 hand labels | containment misses paraphrases and cannot see outdated golds |
 | Gold answers | NQ/TriviaQA: full DPR list; multi-hop: single IRCoT answer | all variants with short-alias filter for accuracy (main report) + Adaptive-RAG's gold set (comparison report) | see [Answer-variant policy](#answer-variant-policy) |
 | Unscorable / duplicate-text questions | kept | dropped before sampling (counts in `data/processed/summary.md`) | can never be scored correct; duplicate texts risk split leakage |
 | Retrieval engine | Elasticsearch 7.10.2, `english` analyzer | Pyserini/Lucene, `DefaultEnglishAnalyzer` (Porter + English stopwords) | ES 7.10.2 has no ARM-macOS build. Same BM25 (k1 1.2, b 0.75), same title+text query, same 100-candidate dedup. Remaining difference: ES `english` analyzer also applies a possessive filter and keyword marker; tokenization of rare edge cases can differ |
 | Document ids | first 32 hex chars of an ES-side hash | DPR passage id (wiki), Wikipedia page id (hotpotqa), sha256(title+text)[:32] (2wiki, musique) | ids are internal; corpora and dedup are the same, document counts match exactly |
 | Retrieval strategy | no / single-step / multi-step (IRCoT) | no retrieval and single-step only | multi-step retrieval is out of scope |
 | Generator | FLAN-T5-XL/XXL, GPT-3.5 (`gpt-3.5-turbo-instruct`), with few-shot CoT prompts | GPT-5 nano (`gpt-5-nano-2025-08-07`), and separately Gemini 3.5 Flash-Lite (`gemini-3.5-flash-lite`, default minimal thinking); zero-shot, short-answer prompt | thesis design; cost-sensitive small models. Gemini logs live under `results/models/` and do not mix with the nano logs |
-| Router | trained T5 query-complexity classifier | none yet; oracle upper bound + the model's own YES/NO decision (`llm_decision`) | learned routers come later |
+| Router | trained T5 query-complexity classifier (no / single / multi-step) | binary: the model's own YES/NO (`llm_decision`) and routers without an LLM call (rules, BM25 scores, TF-IDF, embeddings, kNN) trained per answer model | single-step retrieval only; the router's own cost is the thesis question |
+| Oracle | "w/ Oracle": a perfect A/B/C classifier; labels from which strategy answers, unanswered queries get B (single-hop) or C (multi-hop) | `oracle_realistic` uses the same rule with two strategies (unanswered → always_rag); `oracle_optimistic` sends unanswered queries to llm_only | the optimistic one is the cheapest route at oracle accuracy; the realistic one matches what a router can be trained to do |
+| Difficulty | query complexity = which strategy is needed (A/B/C), learned by the classifier | analysis only: cross-model tier (leave-one-model-out share of models answering without retrieval) | tiers need gold answers; a learned router has to predict them from the question |
 
 (Retrieval, generation and evaluation differences are added as those stages are built.)
 
@@ -350,5 +403,20 @@ model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go 
   therefore evaluated with a retrieval strategy that is known to be weaker for them; answer recall@5 on
   MuSiQue is 0.20 (`results/meta/retrieval_summary.json`).
 - Sparse retrieval only (BM25); no dense retriever or reranker.
+- **Correctness is measured by string containment first.** Accuracy misses correct answers worded
+  differently from the gold ("Christopher Lloyd" for "Christopher Allen Lloyd") and cannot see
+  outdated golds. The LLM judge is a second criterion, checked against 200 hand labels. The default
+  judge is GPT-5 nano, which also produced one of the six answer sets; it may grade its own answers
+  more leniently, so agreement with the hand labels is reported separately for its own answers and for the other models' answers.
+- **Oracle savings depend on the definition.** The optimistic oracle's savings assume the router knows
+  when retrieval will also fail. Claims about what a perfect router can save are made against
+  `oracle_realistic`; both are reported.
+- **Router selection on one test set.** Eight routers × two targets × three operating points are
+  reported on the same 599 test questions; a single significant row can be chance. The router
+  family should be fixed on dev or cross-validation first. Accuracy-matched thresholds chosen on the
+  600-question dev set are unstable, which is why the fixed-budget point (`budget_80`) is reported.
+- **Difficulty tiers depend on the model pool.** They come from six models of similar size (small API
+  models and 2–4B local models). A different pool would move questions between tiers. Each question has
+  one sample per model, so tiers inherit the label noise of single samples.
 - Corpus dates (Wikipedia 2017/2018) differ from the generator's knowledge cutoff (GPT-5 nano: May 2024);
   some gold answers may be outdated relative to the model's knowledge.

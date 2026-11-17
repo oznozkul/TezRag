@@ -9,6 +9,11 @@ Alias policy for accuracy (default): aliases whose normalized form is shorter th
 `min_alias_chars` (3, i.e. <= 2 characters such as "in" for India, "no" for Norwegian) are
 ignored, because containment would match them inside ordinary words of a prediction.
 The primary answer is always kept. EM and F1 use every alias.
+
+Normalization adds two steps to SQuAD v1.1, applied before punctuation is dropped: an English
+possessive "'s" is removed ("Marlowe 's", "Uzumaki's" -> "marlowe", "uzumaki"), and typographic
+quotes (‘ ’ “ ”) count as punctuation. Without the first step, "Christopher Marlowe 's" (gold)
+never matches "Christopher Marlowe" and "Uzumaki's" becomes the token "uzumakis".
 """
 from __future__ import annotations
 
@@ -17,14 +22,15 @@ import string
 from collections import Counter
 
 _ARTICLES = re.compile(r"\b(a|an|the)\b", re.UNICODE)
-_PUNCT = set(string.punctuation)
+_PUNCT = set(string.punctuation) | set("\u2018\u2019\u201c\u201d")
+_POSSESSIVE = re.compile(r"\s*['\u2019]s\b")
 
 
 def normalize_answer(s: str | None) -> str:
-    """Lowercase, drop punctuation, drop articles a/an/the, collapse whitespace (SQuAD v1.1)."""
+    """Lowercase, drop possessive 's, drop punctuation, drop articles a/an/the, collapse whitespace."""
     if not s:
         return ""
-    s = s.lower()
+    s = _POSSESSIVE.sub("", s.lower())
     s = "".join(ch for ch in s if ch not in _PUNCT)
     s = _ARTICLES.sub(" ", s)
     return " ".join(s.split())

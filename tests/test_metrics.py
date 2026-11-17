@@ -13,6 +13,17 @@ def test_normalize_squad_rules():
     assert normalize_answer("!!!") == ""
 
 
+def test_normalize_drops_possessive_and_typographic_quotes():
+    assert normalize_answer("Christopher Marlowe 's") == "christopher marlowe"
+    assert normalize_answer("Uzumaki's") == "uzumaki"
+    assert normalize_answer("Uzumaki\u2019s") == "uzumaki"
+    assert normalize_answer("\u201cWhite Horse\u201d") == "white horse"
+    assert normalize_answer("O'Brien") == "obrien"                  # only a trailing 's is removed
+    assert normalize_answer("Charles") == "charles"
+    assert contains("Christopher Marlowe", "Christopher Marlowe 's") == 1.0
+    assert contains("Naruto Uzumaki's voice role", "Naruto Uzumaki") == 1.0
+
+
 def test_exact_match_and_f1():
     assert exact_match("the Eiffel Tower", "Eiffel Tower") == 1.0
     assert exact_match("Eiffel", "Eiffel Tower") == 0.0

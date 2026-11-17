@@ -14,7 +14,7 @@ import pandas as pd
 from src.bootstrap import mean_ci, paired_mean_diff
 from src.config import Config
 
-SYSTEMS = ("llm_only", "always_rag", "oracle", "llm_decision_router")
+SYSTEMS = ("llm_only", "always_rag", "oracle_optimistic", "oracle_realistic", "llm_decision_router")
 
 SPECS = (
     {"name": "hop_type", "column": "hop_type", "dataset": None,

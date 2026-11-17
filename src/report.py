@@ -107,27 +107,43 @@ def report(cfg, dry_run, all_q, questions, excl_df, metrics, labels, decision, b
 
     mo = metrics[(metrics.split == "all") & (metrics.answer_set == main_set) & (metrics.dataset == "ALL")] \
         .set_index("system")
-    o, a = mo.loc["oracle"], mo.loc["always_rag"]
-    L += ["## Oracle vs Always-RAG", "",
-          f"Oracle {cm} {o.correct:.3f} vs Always-RAG {a.correct:.3f}; cost per question ${o.usd_per_q:.7f} vs "
-          f"${a.usd_per_q:.7f} (**{1 - o.usd_per_q / a.usd_per_q:.1%} cheaper**); retrieval calls "
-          f"{o.retrieval_calls} vs {a.retrieval_calls} ({1 - o.retrieval_calls / a.retrieval_calls:.1%} fewer).", ""]
+    a = mo.loc["always_rag"]
+    ocols = [("system", "system", None), ("correct", cm, 3), ("usd_per_q", "$/q", 7),
+             ("saving", "cheaper than Always-RAG", 3), ("retrieval_rate", "retrieval rate", 3)]
+    orows = mo.loc[["always_rag", "oracle_optimistic", "oracle_realistic"]].reset_index()
+    orows["saving"] = 1 - orows.usd_per_q / a.usd_per_q
+    dmean = mo.loc["llm_decision_router"].router_usd_per_q
+    real = mo.loc["oracle_realistic"]
+    ceiling = real.usd_per_q + dmean
+    L += ["## Oracles vs Always-RAG", "",
+          "Both oracles read the gold answers, so they are upper bounds and training labels, not routers. "
+          "`oracle_optimistic` sends questions that both paths get wrong to the cheaper llm_only; that "
+          "needs to know retrieval will fail too. `oracle_realistic` skips retrieval only when llm_only is "
+          "correct and keeps retrieval as the default otherwise (the Adaptive-RAG labelling rule). "
+          "Accuracy is identical; only cost differs.", "",
+          md_table(orows, ocols), "",
+          f"**A perfect router that costs one llm_decision call per question**: realistic oracle "
+          f"${real.usd_per_q:.7f} + decision ${dmean:.7f} = ${ceiling:.7f}/q vs Always-RAG ${a.usd_per_q:.7f} "
+          f"({1 - ceiling / a.usd_per_q:+.1%} saving). With the optimistic oracle it would be "
+          f"{1 - (mo.loc['oracle_optimistic'].usd_per_q + dmean) / a.usd_per_q:+.1%}. Other price ratios: "
+          f"`price_sensitivity.csv`.", ""]
 
     dsel = decision[decision.answer_set == main_set]
     L += ["## llm_decision router (the model's own YES/NO)", "",
           "Route: YES -> llm_only, NO/invalid -> always_rag. Decision cost is charged as router cost. "
-          "`agree w/ oracle` is dominated by both_fail questions (the oracle sends them to llm_only by "
-          "convention); `agree on decisive` uses only rag_hurts + retrieval_needed, where the route "
-          "changes the outcome.", "",
+          "Agreement with the optimistic oracle is dominated by both_fail questions (it sends them to "
+          "llm_only); the realistic oracle sends them to always_rag. `agree on decisive` uses only "
+          "rag_hurts + retrieval_needed, where the route changes the outcome (same for both oracles).", "",
           md_table(dsel, [("dataset", "dataset", None), ("n", "n", None), ("yes", "YES", None), ("no", "NO", None),
-                          ("invalid", "invalid", None), ("agree_with_oracle", "agree w/ oracle", 3),
+                          ("invalid", "invalid", None), ("agree_with_oracle_optimistic", "agree w/ opt. oracle", 3),
+                          ("agree_with_oracle_realistic", "agree w/ real. oracle", 3),
                           ("n_decisive", "decisive q", None), ("agree_on_decisive", "agree on decisive", 3),
                           ("self_knowledge_acc", "YES<->llm_only correct", 3),
                           ("yes_precision", "P(llm_only correct | YES)", 3),
                           ("llm_only_correct_rate", "llm_only correct rate", 3)]), "",
-          "Confusion vs oracle route (all datasets):", ""]
+          "Confusion vs the realistic oracle route (all datasets):", ""]
     allr = dsel[dsel.dataset == "ALL"].iloc[0]
-    L += ["| | oracle: llm_only | oracle: always_rag |", "|---|---|---|",
+    L += ["| | oracle_realistic: llm_only | oracle_realistic: always_rag |", "|---|---|---|",
           f"| decision YES | {allr.yes_and_oracle_llm_only} | {allr.yes_but_oracle_rag} |",
           f"| decision NO/invalid | {allr.no_but_oracle_llm_only} | {allr.no_and_oracle_rag} |", ""]
     dr = mo.loc["llm_decision_router"]
@@ -183,3 +199,22 @@ def report(cfg, dry_run, all_q, questions, excl_df, metrics, labels, decision, b
     if extra:
         L += ["", extra.rstrip(), ""]
     return "\n".join(L) + "\n"
+
+
+def price_markdown(price: pd.DataFrame) -> str:
+    if price.empty:
+        return ""
+    keep = ["oracle_optimistic", "oracle_realistic", "oracle_realistic+decision", "llm_decision_router"]
+    p = price[price.system.isin(keep)]
+    wide = p.pivot_table(index=["model", "price_ratio"], columns="system", values="saving_vs_always_rag",
+                         sort=False).reset_index()
+    be = p[p.system == "llm_decision_router"].set_index(["model", "price_ratio"]).breakeven_skip_rate
+    wide["breakeven"] = [be.loc[(m, r)] for m, r in zip(wide.model, wide.price_ratio)]
+    cols = [("model", "model", None), ("price_ratio", "out:in price", None)]
+    cols += [(k, k, 3) for k in keep] + [("breakeven", "llm_decision break-even skip rate", 3)]
+    return "\n".join(["## Price sensitivity", "",
+                      "Share cheaper than Always-RAG (negative = more expensive), recomputed from logged tokens "
+                      "with output priced at the given multiple of input. The share does not depend on the "
+                      "absolute price, so local models are included. Cached-input discounts are ignored. "
+                      "`oracle_realistic+decision` = a router that is always right but pays one llm_decision "
+                      "call per question.", "", md_table(wide, cols), ""])

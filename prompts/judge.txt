@@ -1,0 +1,9 @@
+You are grading a short answer to a question.
+
+Question: {question}
+Gold answer(s): {golds}
+Model answer: {prediction}
+
+The model answer is CORRECT if it gives the same entity, value or fact as one of the gold answers, even with different wording, spelling, abbreviation, or extra detail. It is INCORRECT if it gives a different answer, lists several conflicting answers, or gives no answer. Judge only against the gold answers, not against your own knowledge.
+
+Reply with only CORRECT or INCORRECT.

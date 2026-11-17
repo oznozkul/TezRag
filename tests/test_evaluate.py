@@ -8,7 +8,7 @@ from src.evaluate import build_rows
 from src.records import final_records
 from src.io_utils import write_jsonl
 from src.leakage import leak_flags
-from src.routers import oracle_route, outcome_label
+from src.routers import oracle_optimistic_route, oracle_realistic_route, outcome_label
 
 CFG = load_config()
 MODEL = CFG.llm.model
@@ -19,10 +19,12 @@ def test_outcome_labels_and_oracle():
     assert outcome_label(True, False) == "rag_hurts"
     assert outcome_label(False, True) == "retrieval_needed"
     assert outcome_label(False, False) == "both_fail"
-    assert oracle_route(True, False) == "llm_only"
-    assert oracle_route(True, True) == "llm_only"
-    assert oracle_route(False, True) == "always_rag"
-    assert oracle_route(False, False) == "llm_only"         # both wrong -> the cheaper path
+    for oracle in (oracle_optimistic_route, oracle_realistic_route):
+        assert oracle(True, False) == "llm_only"
+        assert oracle(True, True) == "llm_only"
+        assert oracle(False, True) == "always_rag"
+    assert oracle_optimistic_route(False, False) == "llm_only"     # both wrong -> the cheaper path
+    assert oracle_realistic_route(False, False) == "always_rag"    # both wrong -> retrieval stays default
 
 
 def test_call_cost():
@@ -59,8 +61,13 @@ def test_build_rows_composes_routers():
     assert rows[("q1", "llm_only")]["label"] == "rag_hurts"
     assert rows[("q2", "always_rag")]["correct"] is False          # failed call counts as wrong
     assert rows[("q2", "always_rag")]["generation_usd"] > 0          # ...but its tokens are billed
-    assert rows[("q1", "oracle")]["route"] == "llm_only" and rows[("q1", "oracle")]["correct"]
-    assert rows[("q2", "oracle")]["route"] == "llm_only"             # both wrong -> cheaper
+    for o in ("oracle_optimistic", "oracle_realistic"):
+        assert rows[("q1", o)]["route"] == "llm_only" and rows[("q1", o)]["correct"]
+    assert rows[("q2", "oracle_optimistic")]["route"] == "llm_only"     # both wrong -> cheaper
+    assert rows[("q2", "oracle_realistic")]["route"] == "always_rag"    # both wrong -> retrieval
+    assert rows[("q2", "oracle_realistic")]["retrieval_calls"] == 1
+    assert rows[("q2", "oracle_optimistic")]["correct"] == rows[("q2", "oracle_realistic")]["correct"]
+    assert rows[("q2", "llm_only")]["oracle_realistic_route"] == "always_rag"
     dr1, dr2 = rows[("q1", "llm_decision_router")], rows[("q2", "llm_decision_router")]
     assert dr1["route"] == "llm_only" and dr1["retrieval_calls"] == 0 and dr1["correct"]
     assert dr2["route"] == "always_rag" and dr2["retrieval_calls"] == 1

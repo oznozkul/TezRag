@@ -1,4 +1,4 @@
-"""Stage 4: evaluation, outcome labels, oracle, llm_decision router, cost, latency, bootstrap.
+"""Stage 4: evaluation, outcome labels, oracles, llm_decision router, cost, latency, bootstrap.
 
     python -m src.evaluate [--dry-run]
 
@@ -6,7 +6,7 @@ Reads results/raw/*.jsonl and results/latency/*.jsonl; writes results/summary/:
   metrics.csv           system x dataset x split x answer_set: EM, F1, accuracy, tokens, cost, retrieval calls
   question_labels.jsonl per-question outcome labels and routes (input for future routers)
   labels.csv            label distribution per dataset x split
-  decision.csv          llm_decision router: decisions, agreement with oracle, confusion
+  decision.csv          llm_decision router: decisions, agreement with both oracles, confusion
   breakeven.csv         decision cost vs. context tokens saved
   latency.csv           sequential latency per system incl. adaptive (decision + chosen path)
   bootstrap.csv         paired 95% CIs for system differences
@@ -15,6 +15,8 @@ Reads results/raw/*.jsonl and results/latency/*.jsonl; writes results/summary/:
   dispatch.csv          per question: sent to the model, call status, decision route, source attributes
   strata.csv            accuracy and cost by source attribute (hop, popularity, hops, type)
   model_compare.csv     paired accuracy and cost difference when a second model has a full run
+  price_sensitivity.csv cost relative to Always-RAG at several output:input price ratios, per model
+  difficulty*.csv       cross-model (leave-one-model-out) difficulty tiers; see src/difficulty.py
   summary.md            readable report
 
 Final record per (qid, system): the last successful call, else the last call. A failed call counts as a
@@ -31,22 +33,23 @@ import pandas as pd
 from src.config import Config, load_config
 from src.cost import call_usd, retrieval_usd
 from src.data import load_questions
+from src.difficulty import dataset_counts, difficulty_markdown, difficulty_table, question_tiers
 from src.dispatch import discover_run_dirs, dispatch_rows, excluded_qids, load_run_dir, model_of
 from src.io_utils import setup_logging, write_jsonl, write_text
 from src.metrics import is_correct, score
 from src.paths import out_path, results_root
 from src.question_meta import load_meta
 from src.records import final_records
-from src.report import _dispatch_markdown, report
-from src.routers import oracle_route, outcome_label
+from src.report import _dispatch_markdown, price_markdown, report
+from src.routers import ORACLE_ROUTES, ORACLES, outcome_label
 from src.strata import compare_table, stratum_markdown, stratum_table, with_meta
 from src.tables import (aggregate, bootstrap_table, breakeven_table, decision_table, label_table,
-                        latency_tables, leakage_table)
+                        latency_tables, leakage_table, price_sensitivity_table)
 
 log = logging.getLogger("evaluate")
 
 BASE = ("llm_only", "always_rag")
-DERIVED = ("oracle", "llm_decision_router")
+DERIVED = ORACLES + ("llm_decision_router",)
 SYSTEMS = BASE + DERIVED
 
 
@@ -80,13 +83,24 @@ def golds_for(cfg: Config, q: dict, answer_set: str) -> tuple[list, list | None,
     return q["answers"], q["answers_primary"], cfg.eval.accuracy_min_alias_chars
 
 
+JUDGE_SET = "judge"
+# (answer model, system, qid) -> judge verdict; filled by run() before rows are built with JUDGE_SET.
+JUDGE_VERDICTS: dict[tuple[str, str, str], str] = {}
+
+
 def scored(cfg: Config, q: dict, rec: dict, answer_set: str) -> dict:
-    golds, primary, k = golds_for(cfg, q, answer_set)
+    """Scores of one record. Answer set `judge`: EM/F1/accuracy as `all`, but `correct` is the LLM
+    judge's verdict (src/judge.py); a failed call stays wrong, an `invalid` verdict counts as wrong."""
+    golds, primary, k = golds_for(cfg, q, "all" if answer_set == JUDGE_SET else answer_set)
     if rec["error"] is not None:
         sc = {"em": 0.0, "f1": 0.0, "accuracy": 0.0}
     else:
         sc = score(rec["prediction"], golds, primary, k)
-    sc["correct"] = is_correct(sc, cfg.eval.correct_metric, cfg.eval.f1_threshold)
+    if answer_set == JUDGE_SET:
+        sc["correct"] = (rec["error"] is None
+                         and JUDGE_VERDICTS[(rec["model"], rec["system"], q["qid"])] == "correct")
+    else:
+        sc["correct"] = is_correct(sc, cfg.eval.correct_metric, cfg.eval.f1_threshold)
     return sc
 
 
@@ -107,7 +121,7 @@ def build_rows(cfg: Config, questions: dict, recs: dict, answer_set: str) -> lis
         lo, ar, dec = recs["llm_only"][qid], recs["always_rag"][qid], recs["llm_decision"][qid]
         lo_s, ar_s = scored(cfg, q, lo, answer_set), scored(cfg, q, ar, answer_set)
         paths = {"llm_only": path_row(cfg, lo, lo_s, False), "always_rag": path_row(cfg, ar, ar_s, True)}
-        o_route = oracle_route(lo_s["correct"], ar_s["correct"])
+        o_routes = {o: f(lo_s["correct"], ar_s["correct"]) for o, f in ORACLE_ROUTES.items()}
         decision = dec["router_decision"] if dec["error"] is None else "invalid"
         d_route = "llm_only" if decision == "yes" else "always_rag"
         router = {"router_usd": call_usd(cfg, dec), "router_input_tokens": dec.get("input_tokens") or 0,
@@ -116,11 +130,14 @@ def build_rows(cfg: Config, questions: dict, recs: dict, answer_set: str) -> lis
                   "router_ms": float(dec.get("llm_ms") or 0)}
         meta = {"qid": qid, "dataset": q["dataset"], "split": q["split"], "answer_set": answer_set,
                 "label": outcome_label(lo_s["correct"], ar_s["correct"]),
-                "oracle_route": o_route, "decision": decision, "decision_route": d_route}
-        for s, base in (("llm_only", paths["llm_only"]), ("always_rag", paths["always_rag"]),
-                        ("oracle", paths[o_route]), ("llm_decision_router", {**paths[d_route], **router})):
-            rows.append({**meta, "system": s, "route": {"oracle": o_route,
-                         "llm_decision_router": d_route}.get(s, s), **base})
+                **{f"{o}_route": r for o, r in o_routes.items()},
+                "decision": decision, "decision_route": d_route}
+        routes = {**o_routes, "llm_decision_router": d_route}
+        systems = [("llm_only", paths["llm_only"]), ("always_rag", paths["always_rag"])]
+        systems += [(o, paths[r]) for o, r in o_routes.items()]
+        systems += [("llm_decision_router", {**paths[d_route], **router})]
+        for s, base in systems:
+            rows.append({**meta, "system": s, "route": routes.get(s, s), **base})
     for r in rows:
         r["total_usd"] = r["generation_usd"] + r["retrieval_usd"] + r["router_usd"]
         r["billed_input_tokens"] = (r.get("input_tokens") or 0) + (r.get("router_input_tokens") or 0)
@@ -157,7 +174,8 @@ def run(cfg: Config, dry_run: bool) -> None:
     df = pd.DataFrame(rows)
     main_set = cfg.eval.answer_sets[0]
     write_jsonl(out / "question_labels.jsonl",
-                df[(df.system == "llm_only")][["qid", "dataset", "split", "answer_set", "label", "oracle_route",
+                df[(df.system == "llm_only")][["qid", "dataset", "split", "answer_set", "label",
+                                               "oracle_optimistic_route", "oracle_realistic_route",
                                                "decision", "decision_route"]].to_dict("records"))
 
     metrics = aggregate(df)
@@ -215,13 +233,29 @@ def run(cfg: Config, dry_run: bool) -> None:
     dispatch_df = pd.DataFrame(dispatch_list)
     strata = pd.concat(stratum_parts, ignore_index=True) if stratum_parts else pd.DataFrame()
     compare = compare_table(frames, cfg)
+    price = price_sensitivity_table(frames, cfg.pricing)
+    tiers = question_tiers(frames)
+    difficulty = difficulty_table(frames, tiers, cfg)
+    counts = dataset_counts(frames)
     for folder in {out, shared}:
         dispatch_df.to_csv(folder / "dispatch.csv", index=False)
         strata.to_csv(folder / "strata.csv", index=False)
+        price.to_csv(folder / "price_sensitivity.csv", index=False)
         if not compare.empty:
             compare.to_csv(folder / "model_compare.csv", index=False)
+        if not difficulty.empty:
+            difficulty.to_csv(folder / "difficulty.csv", index=False)
+            tiers.to_csv(folder / "difficulty_questions.csv", index=False)
+            counts.to_csv(folder / "difficulty_by_dataset.csv", index=False)
 
-    extra = _dispatch_markdown(dispatch_df) + "\n" + stratum_markdown(strata, compare)
+    from src.judge_eval import judge_section
+    judge_md = judge_section(cfg, dry_run, bundles, frames, out, shared)
+
+    from src.learned_routers import router_markdown
+    routers_md = router_markdown(out)
+
+    extra = (_dispatch_markdown(dispatch_df) + "\n" + routers_md + "\n" + judge_md + "\n" + price_markdown(price) + "\n"
+             + difficulty_markdown(difficulty, counts) + "\n" + stratum_markdown(strata, compare))
     write_text(out / "summary.md", report(cfg, dry_run, all_q, questions, excl_df, metrics, labels, decision,
                                           breakeven, leakage, boot, lat_tab, lat_diff, lat_info, retry_rows,
                                           df, main_set, extra))

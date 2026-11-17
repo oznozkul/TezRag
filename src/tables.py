@@ -58,14 +58,15 @@ def decision_table(df: pd.DataFrame) -> pd.DataFrame:
             lo_ok = g.label.isin(["both_ok", "rag_hurts"])
             decisive = g.label.isin(["rag_hurts", "retrieval_needed"])   # only here does the route matter
             dec_yes = g.decision == "yes"
-            orc_lo = g.oracle_route == "llm_only"
+            orc_lo = g.oracle_realistic_route == "llm_only"          # = llm_only correct
             out.append({
                 "answer_set": aset, "dataset": ds, "n": len(g),
                 "yes": int((g.decision == "yes").sum()), "no": int((g.decision == "no").sum()),
                 "invalid": int((g.decision == "invalid").sum()),
-                "agree_with_oracle": float((g.decision_route == g.oracle_route).mean()),
+                "agree_with_oracle_optimistic": float((g.decision_route == g.oracle_optimistic_route).mean()),
+                "agree_with_oracle_realistic": float((g.decision_route == g.oracle_realistic_route).mean()),
                 "n_decisive": int(decisive.sum()),
-                "agree_on_decisive": float((g.decision_route == g.oracle_route)[decisive].mean())
+                "agree_on_decisive": float((g.decision_route == g.oracle_realistic_route)[decisive].mean())
                 if decisive.any() else float("nan"),
                 "yes_and_oracle_llm_only": int((dec_yes & orc_lo).sum()),
                 "yes_but_oracle_rag": int((dec_yes & ~orc_lo).sum()),
@@ -156,9 +157,10 @@ def latency_tables(cfg: Config, questions: dict, lat: dict, excluded: set) -> tu
 
 
 def bootstrap_table(cfg: Config, df: pd.DataFrame) -> pd.DataFrame:
-    pairs = [("always_rag", "llm_only"), ("oracle", "always_rag"), ("oracle", "llm_only"),
+    pairs = [("always_rag", "llm_only"), ("oracle_realistic", "always_rag"), ("oracle_realistic", "llm_only"),
+             ("oracle_optimistic", "always_rag"), ("oracle_realistic", "oracle_optimistic"),
              ("llm_decision_router", "always_rag"), ("llm_decision_router", "llm_only"),
-             ("llm_decision_router", "oracle")]
+             ("llm_decision_router", "oracle_realistic")]
     out = []
     for aset in df.answer_set.unique():
         d = df[df.answer_set == aset]
@@ -176,4 +178,53 @@ def bootstrap_table(cfg: Config, df: pd.DataFrame) -> pd.DataFrame:
                                 "metric": metric if metric != "correct" else cfg.eval.correct_metric,
                                 "n": len(qids), "diff": m, "ci_lo": lo, "ci_hi": hi,
                                 "significant": not (lo <= 0 <= hi)})
+    return pd.DataFrame(out)
+
+
+PRICE_RATIOS = (1.0, 4.0, 8.0)
+
+
+def _nominal_usd(input_tokens, output_tokens, p_in: float, ratio: float):
+    """Price per question with input price p_in per 1M tokens and output price ratio * p_in.
+
+    The cached-input discount is ignored. BM25 is local and free, so retrieval adds no price.
+    """
+    return (input_tokens * p_in + output_tokens * p_in * ratio) / 1e6
+
+
+def price_sensitivity_table(frames: dict, pricing: dict) -> pd.DataFrame:
+    """Cost relative to Always-RAG under different output:input price ratios, from logged tokens.
+
+    frames: model -> rows of one answer set (output of build_rows). A ratio changes only the relative
+    cost, never the accuracy, so `saving_vs_always_rag` does not depend on the absolute price. Each
+    model is priced at its own ratio as well (`actual`) when the config has a non-zero input price.
+    `oracle_realistic+decision` = the realistic oracle plus the cost of the llm_decision call on every
+    question: a router that is always right but pays for one LLM call per question.
+    """
+    out = []
+    for model, df in frames.items():
+        wide = {s: g.set_index("qid") for s, g in df.groupby("system")}
+        qids = wide["always_rag"].index
+        p = pricing.get(model, {})
+        ratios = [(f"1:{r:g}", r) for r in PRICE_RATIOS]
+        if p.get("input_per_1m"):
+            ratios.append((f"actual 1:{p['output_per_1m'] / p['input_per_1m']:g}",
+                           p["output_per_1m"] / p["input_per_1m"]))
+        dec = wide["llm_decision_router"].loc[qids]
+        for label, r in ratios:
+            def cost(s):
+                g = wide[s].loc[qids]
+                return _nominal_usd(g.input_tokens, g.output_tokens, 1.0, r)
+            router = _nominal_usd(dec.router_input_tokens, dec.router_output_tokens, 1.0, r)
+            costs = {s: cost(s) for s in ("llm_only", "always_rag", "oracle_optimistic", "oracle_realistic")}
+            costs["llm_decision_router"] = cost("llm_decision_router") + router
+            costs["oracle_realistic+decision"] = costs["oracle_realistic"] + router
+            ar = float(costs["always_rag"].mean())
+            skip_saving = float((costs["always_rag"] - costs["llm_only"]).mean())
+            for s, c in costs.items():
+                out.append({"model": model, "price_ratio": label, "out_in_ratio": r, "system": s,
+                            "n": len(qids), "relative_cost": float(c.mean()) / ar,
+                            "saving_vs_always_rag": 1 - float(c.mean()) / ar,
+                            "breakeven_skip_rate": float(router.mean()) / skip_saving
+                            if s == "llm_decision_router" else float("nan")})
     return pd.DataFrame(out)

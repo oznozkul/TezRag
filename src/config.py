@@ -119,6 +119,15 @@ class EvalCfg(_Strict):
     ci: float
 
 
+class JudgeCfg(_Strict):
+    """LLM judge for answer correctness (src/judge.py). Its verdicts are a second correctness
+    criterion next to token-bounded accuracy; they never replace the logged answers."""
+    model: str
+    prompt: str
+    max_golds: int = Field(default=10, gt=0)
+    systems: list[Literal["llm_only", "always_rag"]] = ["llm_only", "always_rag"]
+
+
 class Config(_Strict):
     seed: int
     paths: Paths
@@ -131,6 +140,7 @@ class Config(_Strict):
     latency: LatencyCfg
     eval: EvalCfg
     pricing: dict[str, dict[str, Any]]
+    judge: JudgeCfg | None = None
 
     @model_validator(mode="after")
     def _check(self) -> "Config":
