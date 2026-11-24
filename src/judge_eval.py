@@ -61,7 +61,7 @@ def disagreement_rows(model: str, main: pd.DataFrame, judged: pd.DataFrame) -> l
 
 def judge_section(cfg: Config, dry_run: bool, bundles: list, frames: dict, out: Path, shared: Path) -> str:
     from src import evaluate
-    from src.annotation import agreement_markdown, all_agreement, annotation_dir
+    from src.annotation import agreement_markdown, all_agreement, annotation_dir, review_summary
     from src.judge import load_verdicts
     from src.report import md_table
 
@@ -115,4 +115,9 @@ def judge_section(cfg: Config, dry_run: bool, bundles: list, frames: dict, out: 
         for folder in {out, shared}:
             agr.to_csv(folder / "annotation_agreement.csv", index=False)
     L += [agreement_markdown(agr, n_sheet)]
+    rs = review_summary(cfg, dry_run)
+    if rs:
+        L += [f"Review progress (`review.csv`): {rs['reviewed']}/{rs['items']} items checked by the author, "
+              f"{rs['changed']} suggestions changed; {rs['check_first_reviewed']}/{rs['check_first']} of the "
+              "items listed first (suggestion disagrees with accuracy or the judge, or is `?`).", ""]
     return "\n".join(L)

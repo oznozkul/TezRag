@@ -403,14 +403,21 @@ Main comparisons under both criteria (paired 95% CI, stratified by dataset):
 
 ## Correctness criteria vs. reference labels
 
-Sheet of 200 items; items labelled `?` are left out. `human` = hand labels; any other reference is a model that labelled the same items and is not a human check. The sample is stratified by dataset x accuracy verdict; (w) columns reweight each cell to its share of all answers. `missed correct` = reference correct, criterion wrong; `accepted wrong` = the reverse.
+Sheet of 200 items; items labelled `?` are left out. `human` = hand labels made without any suggestion; `author_verified` = a model's suggested labels checked one by one by the author, who saw the suggestion (so its agreement with that model is not independent); any other reference is a model that labelled the same items and is not a human check. The sample is stratified by dataset x accuracy verdict; (w) columns reweight each cell to its share of all answers. `missed correct` = reference correct, criterion wrong; `accepted wrong` = the reverse.
 
 | reference labels | criterion | n | agreement | kappa | missed correct | accepted wrong | missed-correct rate (w) | accepted-wrong rate (w) | reference correct (w) | criterion correct (w) |
 |---|---|---|---|---|---|---|---|---|---|---|
+| author_verified | accuracy | 200 | 0.955 | 0.910 | 7 | 2 | 0.107 | 0.007 | 0.373 | 0.337 |
+| author_verified | judge | 200 | 0.945 | 0.890 | 6 | 5 | 0.080 | 0.056 | 0.373 | 0.378 |
+| author_verified | judge: own model's answers | 37 | 0.811 | 0.621 | 4 | 3 | 0.287 | 0.199 | 0.388 | 0.399 |
+| author_verified | judge: other models' answers | 163 | 0.975 | 0.951 | 2 | 2 | 0.032 | 0.025 | 0.369 | 0.373 |
+| author_verified | labels: claude-opus-5-5 | 199 | 1.000 | 1.000 | 0 | 0 | 0.000 | 0.000 | 0.375 | 0.375 |
 | claude-opus-5-5 | accuracy | 199 | 0.955 | 0.910 | 7 | 2 | 0.107 | 0.007 | 0.375 | 0.340 |
 | claude-opus-5-5 | judge | 199 | 0.945 | 0.889 | 6 | 5 | 0.080 | 0.057 | 0.375 | 0.380 |
 | claude-opus-5-5 | judge: own model's answers | 37 | 0.811 | 0.621 | 4 | 3 | 0.287 | 0.199 | 0.388 | 0.399 |
 | claude-opus-5-5 | judge: other models' answers | 162 | 0.975 | 0.950 | 2 | 2 | 0.032 | 0.026 | 0.372 | 0.376 |
+
+Review progress (`review.csv`): 200/200 items checked by the author, 1 suggestions changed; 20/20 of the items listed first (suggestion disagrees with accuracy or the judge, or is `?`).
 
 ## Price sensitivity
 

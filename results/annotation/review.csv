@@ -1,0 +1,201 @@
+﻿item_id;check_first;dataset;question;gold_answers;model_answer;suggested_label;suggested_note;verdict;note;karar_dogru
+A011;1;nq;what are the top 5 languages spoken in the us;Chinese | Vietnamese | English | Tagalog | Spanish;English, Spanish, Chinese, French, German;0;list has 3 of 5 gold languages plus 2 wrong;ok;;1
+A026;1;nq;what process results in an exchange of genes between homologous;Chromosomal crossover;Gene recombination.;?;"'gene recombination' is the broader outcome; gold names the process (crossover)";0;author: process asked, recombination is the broader outcome;0
+A028;1;hotpotqa;Thomas Fitch defended John Henry Holliday when he was accused of killing men during the gunfight at the o.k. corral, when was that?;October 25, 1881;1881;0;"year only; gold is the full date";ok;;1
+A040;1;musique;What county is the city that shares a border with the state capital of the state where the RBC Heritage Golf Tournament is played in?;Richland County | Richland County, South Carolina;RBC Heritage is played in Hilton Head Island, South Carolina. State capital: Columbia (Richland County). Cities sharing a border with Columbia: West Columbia, Cayce, Forest Acres, Irmo...  /  / Answer: Lexington County;0;reasoning mentions Richland, final answer Lexington;ok;;1
+A062;1;nq;who 's playing in the hall of fame game;Baltimore Ravens | Chicago Bears;The two teams selected by the NFL (typically);0;;ok;;1
+A067;1;triviaqa;Who is the patron saint of shoemakers?;Crispin and Crispinian, Saints | Crispen | St Crepinus | St Crispin | St. Crepinus | Crispin and Crispinian | Crispinian | Saint Crispinian | Crispin and Crispian | St. Crepinianus;Saint Crispin;1;;ok;;1
+A068;1;popqa;What genre is All the Years?;rock music | rock and roll | rock | Rock;folk-rock album;1;folk rock is a rock subgenre;ok;;1
+A070;1;musique;What is the average winter daytime temperature in the region where Richmond is found, in the state where the Battle of Fredericksburg was fought?;upper 40s–lower 50s °F;Mid-40s Fahrenheit (about 7–9°C);0;;ok;;1
+A072;1;hotpotqa;In 2011 what was the population of the town where Deep Purple were formed ?;about 26,000.;Not mentioned;0;;ok;;1
+A085;1;triviaqa;'Magnificent Century' is among what hugely popular Turkish export to Arab and Balkan regions in the 2000s?;TV dramas | Television drama series | TV Drama | Teledrama | Drama series | Televised dramas | Drama Series | Dramatic programming | Dramatic television series | TV drama;Turkish dramas;1;Turkish dramas = TV dramas;ok;;1
+A113;1;popqa;Who was the producer of Healers of the Dead Sea?;John M. Allegro | John Marco Allegro;John Marco Allegro and Douglas Edwards;1;correct producer plus one extra name;ok;;1
+A126;1;nq;when was on the revolutions of the heavenly spheres published;1543;1543;1;;ok;;1
+A132;1;nq;when was the niv version of the bible written;first published in 1978;出版与翻译时间不同。NIV（新国际版圣经）完成于1978年首版发行。;1;answer in Chinese, says first published 1978;ok;;1
+A139;1;hotpotqa;Soundcloud rap has been used by which rapper from Lauderhill, Florida?;Jahseh Dwayne Onfroy;Lil Wayne? No, that's wrong—Lauderhill, Florida rapper associated with SoundCloud rap: **XXXTentacion**;1;"XXXTentacion is Onfroy's stage name; self-correction";ok;;1
+A140;1;triviaqa;For a point each, name the 5 states surrounding Georgi    A.;South Carolina, Alabama, Florida, Tennessee, and North Carolina;"I'm not sure what you mean by ""Georgi A."" Could you clarify? If you mean the U.S. state of Georgia, its neighbors are Florida, Alabama, Tennessee, North Carolina, and South Carolina.";1;asks to clarify but lists all five states;ok;;1
+A145;1;triviaqa;Does the Queen Have Any Siblings?;No, however, Queen Elizabeth II did have just one sibling, Princess Margaret, who became Countess of Snowdon;No;1;gold is an odd 'No, however...' string;ok;;1
+A168;1;hotpotqa;"Disorganized Crime included what cast member best known for playing Al Bundy on the Fox Network sitcom ""Married... with Children""?";"Edward Leonard ""Ed"" O'Neill";Ed O'Neill;1;;ok;;1
+A176;1;nq;who built the cube in the movie cube;Worth;Ice Cube and Cube Vision.;0;;ok;;1
+A179;1;popqa;Who was the producer of Tarzan's Greatest Adventure?;Sy Weintraub | Seymour George Weintraub;Sy Weintraub and Harvey Hayutin;1;correct producer plus one extra name;ok;;1
+A183;1;triviaqa;What is the championship game of the US National Football League, the premier association of professional American football, that was first played in 1966?;Superb owl | AFL-NFL Championship Game | List of Super Bowl venues | Super Bowl on TV | The superbowl | Super bowl | Super-bowl | NFL superbowls | Super Bowl party | AFL-NFL World Championship Game;Super Bowl I;1;Super Bowl I = the first Super Bowl;ok;;1
+A001;0;triviaqa;In which constellation is the Great Nebula?;Orion (music) | Orion (song) | Orion Class Spaceship | Orions (disambiguation) | Orion-class spaceship | Orion (system) | ORION | Orions | Orion | Orion (disambiguation);Orion;1;;ok;;1
+A002;0;triviaqa;Of which famous public school was Thomas Arnold headmaster from 1828 to 1842;Rugby (disambiguation) | Rugby | Rubgy;Rugby School;1;;ok;;1
+A003;0;triviaqa;What name is given to the boards which protect the ends of the roof timbers at the gable end of a house?;Bargeboard | Barge-board | Verge-board | BARGEBOARDS | Vergeboard | Barge boards | Bargeboards;Bargeboards;1;;ok;;1
+A004;0;musique;The language of a film titled and about the city where Tito was interred is the co-official language of a county. In what city is the national Radio and Television broadcaster for that country?;Pristina;"Tito was interred in Belgrade. A film titled ""Belgrade"" ... the language is Serbian. Serbian is co-official in Kosovo. National broadcaster for Kosovo: RTK (Radio Television of Kosovo), based in Pristina. /  / Pristina";1;long reasoning, final answer Pristina;ok;;1
+A005;0;2wikimultihopqa;Which film has the director who died first, The Flyin' Cowboy or From Morn To Midnight?;From Morn To Midnight | From Morn to Midnight (movie) | Von morgens bis mitternachts | De l'aube à minuit (film) | From Morn to Midnight;From Morn To Midnight;1;;ok;;1
+A006;0;musique;What county shares a border with the other county, that contains the city, that is the birthplace of the performer of Never Gonna Fall in Love Again?;Cabarrus County;Fresno County;0;;ok;;1
+A007;0;hotpotqa;Maggie May is a musical based on a folk song about a prostitute who robbed whom?;sailor;A sailor;1;;ok;;1
+A008;0;hotpotqa;What Brooklyn-based rapper has worked with both Rafeal Casal and Mos Def?;Talib Kweli;Talib Kweli;1;;ok;;1
+A009;0;hotpotqa;Ali Eren Balıkel started a restaurant which hosted a number of famous figures including an English actor who won three consecutive what?;BAFTA Awards for Best Actress;Oscar Awards;0;;ok;;1
+A010;0;hotpotqa;Were Frank R. Strayer and Krzysztof Kieślowski both Directors?;yes;No;0;;ok;;1
+A012;0;nq;what is the full form of c o p d;Chronic obstructive pulmonary disease;Chlorinated Organic Pesticide Detergent;0;;ok;;1
+A013;0;popqa;Who was the screenwriter for The Dark Knight Rises?;Christopher Nolan | Christopher Jonathan James Nolan | Nolan | Christopher Edward Nolan | Jonathan Nolan;Christopher Nolan and Jonathan Nolan;1;"both Nolans; gold lists both";ok;;1
+A014;0;popqa;Who was the director of Nuclear Strike?;Sam Miller;Michael Knight;0;;ok;;1
+A015;0;nq;what are the top 5 languages spoken in the us;Chinese | Vietnamese | English | Tagalog | Spanish;English, Spanish, Chinese, Tagalog, Vietnamese;1;;ok;;1
+A016;0;2wikimultihopqa;What is the place of birth of Ratna Malla's father?;Nepal | 🇳🇵 | Federal Democratic Republic of Nepal | NPL | NP | NEP | Nepali | Gurkhas;Not stated in the context.;0;;ok;;1
+A017;0;2wikimultihopqa;Where was the performer of song Esclavo De Sus Besos born?;Almería | Almeria | Urcitano | Almeriense | Almerian;Spain;0;country only, gold is the city;ok;;1
+A018;0;nq;who is the minister of state for environment forest and climate change ( independent charge );Dr. Harsh Vardhan;Bhupender Yadav;0;"outdated gold; answer is a later minister";ok;;1
+A019;0;hotpotqa;What region of Italy was Giorgio Pini born in?;Emilia-Romagna Region;Tuscany;0;;ok;;1
+A020;0;musique;What publisher was formed from the owner of the The Daily News?;Digital First Media | MediaNews Group;MediaNews Group;1;;ok;;1
+A021;0;triviaqa;The Australian city of  Melnbourne lies at the mouth of which river?;Yarra river | Birrarung | River Yarra | Yarra Yarra River | Yarra River | Yarra River, Victoria Australia | Yarra Yarra;River mouth;0;;ok;;1
+A022;0;popqa;What sport does Gerardo Galindo play?;association football | football | soccer;Football;1;;ok;;1
+A023;0;nq;who initiated construction of the imperial city in beijing;Yongle Emperor;Yongle Emperor;1;;ok;;1
+A024;0;triviaqa;Which name is hsared by a US state capital and a British shipping forecast area?;Dover RFC | Docks Of Dover | Docks of Dover | The weather in Dover | Charlton by Dover | Dover, Kent | Dover (town, England) | Dover, England | Dover;Belfast;0;;ok;;1
+A025;0;triviaqa;The villages of Soultz-les-Bains, Eguisheim, Riquewihr & Soulzmatt are all located at the heart of which French wine region?;Alsace (France) | Alsatian culture | Alsace, France | Elass | Elsass | Alsacian | Alsazia | Alsace | Elsaß | Alsatian Plain;Alsace wine region;1;;ok;;1
+A027;0;2wikimultihopqa;Where was the mother of Shubhendra Shankar born?;Maihar;Amala Shankar was born in Kolkata, India.;0;;ok;;1
+A029;0;popqa;In what city was Philipp Crone born?;Cologne | Köln | Kreisfreie Stadt Köln | Cologne, Germany | Cologne (Germany);Munich;0;;ok;;1
+A030;0;hotpotqa;Are Wake Forest University and Pennsylvania State University both located in the US?;yes;Yes, both are.;1;;ok;;1
+A031;0;2wikimultihopqa;Which film came out first, King Rikki or De-Lovely?;King Rikki;King Rikki came first.;1;;ok;;1
+A032;0;2wikimultihopqa;Which film has the director who died earlier, The Ogre Of Athens or Thayi Karulu?;Thayi Karulu;The Ogre Of Athens;0;;ok;;1
+A033;0;musique;What treaty ceded territory to the US extending west to the body of water by the city where the designer of Southeast Library died?;Treaty of Paris;Treaty of Paris (1783);1;;ok;;1
+A034;0;nq;who sang the original the way you look tonight;Fred Astaire;Fred Astaire;1;;ok;;1
+A035;0;2wikimultihopqa;Who is Patricius (Caesar)'s paternal grandfather?;Ardabur | Flavius Ardaburius | Ardabur (consul 427);Augustus;0;;ok;;1
+A036;0;popqa;What genre is Breaker?;heavy metal | heavy metal music | Heavy Metal | Metal | Metal music | metal | Heavy Metal Music;Action film.;0;;ok;;1
+A037;0;musique;Who is the father of the performer of Qui de noux deux?;Louis Chedid;Matthieu Chedid's father is Louis Chedid.;1;;ok;;1
+A038;0;hotpotqa;which plant has the highest specie  Panicum or Populus;Panicum;Panicum;1;;ok;;1
+A039;0;hotpotqa;Where did the designer of the Van de Graaff generator teach at?;Princeton University and Massachusetts Institute of Technology;Princeton University and Massachusetts Institute of Technology;1;;ok;;1
+A041;0;triviaqa;British singer and actor Terence Nelhams-Wright was better known by what name?;Terry Nelhams-Wright | Terence Nelhams | Terry Nelhams | Adam Faith | Terence Nelhams-Wright;Adam Faith;1;;ok;;1
+A042;0;triviaqa;Until the 1960's, Catholic mass was almost always delivered in what language?;Latin | Latina lingvo | Lingua Latīna | Latin Language | ISO 639:la | Latin (language) | Latin language | ISO 639:lat | Roman language | Lingua latina;Latin;1;;ok;;1
+A043;0;triviaqa;What is the title of the 1984 film about the life of composer Mozart?;Amadeus | Amadeus (play);The Magic Flute;0;;ok;;1
+A044;0;hotpotqa;Matt Doheny lost his primary race to what current youngest woman ever elected to Congress?;Elise Stefanik;Elise Stefanik;1;;ok;;1
+A045;0;2wikimultihopqa;Which film came out earlier, Kaaka Muttai or En Sømand Går I Land?;En Sømand Går I Land | En sømand går i land;Kaaka Muttai;0;;ok;;1
+A046;0;triviaqa;"""Who wrote """"Rhapsody in Blue""""?""";George gershwin | Gerschwin | Jacob Gershowitz | Gershwin, George | George gerschwin | Gershwin | George Gerswin | George Gershwin;George Gershwin;1;;ok;;1
+A047;0;hotpotqa;What was the address of the penitentiary where Jimmy Elliot was sentenced?;2027 Fairmount Avenue;Eastern State Penitentiary;0;;ok;;1
+A048;0;popqa;What is the religion of Lord's Prayer?;Christianity | Christian faith;Christianity;1;;ok;;1
+A049;0;musique;The Pee Dee River leads to a bay which leads to an ocean. Who led an attempt to link that ocean with the Pacific via a canal through the continental region containing the El Valle volcano?;Ferdinand de Lesseps;Ferdinand de Lesseps;1;;ok;;1
+A050;0;hotpotqa;Taylor Momsen and Craig Mabbitt from Escape the Fate have what in common?;lead singer;Escape the Fate;0;;ok;;1
+A051;0;triviaqa;Which writer, mother of a British politician, wrote Testament of Youth?;Vera Brittain | VERA BRITTAIN | Vera mary brittain | Vera Mary Brittain;Shirley Williams;0;;ok;;1
+A052;0;nq;who plays the genie in return of jafar;Dan Castellaneta;Gilbert Gottfried;0;;ok;;1
+A053;0;hotpotqa;Were Ransom Riggs and John Berry from the same country?;yes;Yes;1;;ok;;1
+A054;0;triviaqa;Which king of England had the nickname ‘Beauclerc’?;HENRY I | Enrique I | Henry the 1st | Enrico I | Henry I | Henry the First | Hendrik I | Henry the first | Henry 1 | Henry I (disambiguation);William I;0;;ok;;1
+A055;0;musique;Who is the owner of the record label that Just Got Started Lovin' You's performer belong to?;Warner Music Group | Warner Music;James Otto;0;;ok;;1
+A056;0;popqa;What is the capital of Bulgaria?;Sofia | Serdica | Sredez | Sofija | Sredets;Sofia;1;;ok;;1
+A057;0;musique;When is Celebrity Big Brother coming to the network which, along with ABC and the network which hosts Westinghouse Playhouse, is the other major broadcaster based in NY?;February 7, 2018;February 7, 2018;1;;ok;;1
+A058;0;nq;who played hannibal lecter in silence of the lambs;Anthony Hopkins;Anthony Hopkins.;1;;ok;;1
+A059;0;musique;Who became the president of Frederic Chopin's original country in 1990?;Lech Wałęsa;Lech Wałęsa;1;;ok;;1
+A060;0;nq;when is the last time the astros been to the world series;2017;2022;0;"outdated gold (2017); 2022 is correct today";ok;;1
+A061;0;triviaqa;Grenouille is the Frenchfor which creature?;FROG;Frog;1;;ok;;1
+A063;0;popqa;Who was the producer of The Wedding Banquet?;Ang Lee;James Schamus;0;"Schamus co-produced; gold lists Ang Lee only";ok;;1
+A064;0;nq;who sang you did n 't have to love me like you did;Ellie Goulding;Someone else;0;;ok;;1
+A065;0;musique;What were the Genesis's advantages over the platform with a three letter abbreviation, that had a video game named after the league in charge of the Super Bowl halftime show?;built on 16-bit architectures and offered improved graphics and sound | 16-bit | 16-bit architecture;Madden had more realistic gameplay.;0;;ok;;1
+A066;0;musique;Who did the person who married their half sister in the bible marry after the death of sarah?;Keturah;Abraham's wife Rebekah? Wait. Actually: After Sarah's death, Abraham married Keturah.;1;self-corrects to Keturah;ok;;1
+A069;0;nq;when did the rose garden became the moda center;2013;2013;1;;ok;;1
+A071;0;hotpotqa;Was Hoobastank or Fountains of Wayne formed first?;Hoobastank;Fountains of Wayne;0;;ok;;1
+A073;0;2wikimultihopqa;Which award the director of film Satya Mithya earned?;Bangladesh National Film Award for Best Director;National Film Award;0;too general;ok;;1
+A074;0;hotpotqa;Whose writing covered more topics, Alan Dean Foster or Samuel R. Delany?;Samuel Ray Delany Jr.;Alan Dean Foster;0;;ok;;1
+A075;0;musique;What is the name of the famous bridge in the city where the composer of La Silvia was born?;Rialto Bridge | Ponte di Rialto;Rialto Bridge;1;;ok;;1
+A076;0;nq;when was the first federal reserve note issued;1914;1915;0;;ok;;1
+A077;0;triviaqa;The standard of 435 vibrations per second for middle A that was laid down in 1859 is known as what?;French International Pitch;Armstrong standard;0;;ok;;1
+A078;0;triviaqa;It was established at the beginning of the 19th century, and inspired many other criminal investigation forces. What was it?;La Sret Nationale, France;Detective branch;0;;ok;;1
+A079;0;2wikimultihopqa;Did Sarah Baker (Painter) and Gabor Boritt have the same nationality?;yes;"Sarah Baker (painter) is American; Gabor Boritt is American too. Yes, both American.";1;;ok;;1
+A080;0;musique;What administrative territorial entity includes the place where Bill Cockcroft was educated?;Tonbridge, Kent | Kent | Tonbridge;Berkshire;0;;ok;;1
+A081;0;2wikimultihopqa;Where was the place of burial of William Nevill, 4Th Earl Of Abergavenny's father?;East Grinstead | East Grinstead, West Sussex;East Grinstead;1;;ok;;1
+A082;0;musique;Where are the headquarters for the publisher of In the Shadow of Greatness?;Annapolis | Annapolis, Maryland;I can't verify that without more context. Which publisher are you referring to?;0;;ok;;1
+A083;0;nq;who is the mathematician who first use brackets to indicate grouping;Christopher Clavius;William Johnson;0;;ok;;1
+A084;0;nq;when is the season 3 of fuller house coming out;September 22 , 2017;Never;0;;ok;;1
+A086;0;musique;What was the population of the founder of New Amsterdam before influx of Huguenot refugees?;2 million;2 million;1;;ok;;1
+A087;0;popqa;Who is the father of Charles of Valois?;Philip III of France | the Bold | Philippe III;Charles of Valois;0;;ok;;1
+A088;0;2wikimultihopqa;Who is Prince Aloys Of Liechtenstein's paternal grandfather?;Prince Franz de Paula of Liechtenstein;Prince Aloys;0;;ok;;1
+A089;0;nq;who did tom brady back up at michigan;Brian Griese;Jason Kelce;0;;ok;;1
+A090;0;nq;who did the original power rangers theme song;Ron Wasserman;Ron Wasserman;1;;ok;;1
+A091;0;triviaqa;Which Conservative Party leader was once editor of the 'Church Times'?;Sir Edward Heath | Shadow Cabinet of Edward Heath II | Shadow Cabinet of Edward Heath (1974–1975) | Edward Heath | Edward Richard George Heath | EDWARD HEATH | Ted Heath | Edward R. G. Heath;Peter Lilley;0;;ok;;1
+A092;0;nq;the habanera and the toreador song are two famous arias from which opera;Carmen;Carmen;1;;ok;;1
+A093;0;hotpotqa;Maggie May is a musical based on a folk song about a prostitute who robbed whom?;sailor;a wealthy man;0;;ok;;1
+A094;0;nq;new york times co v sullivan held that there must be proof of;actual malice;Actual malice.;1;;ok;;1
+A095;0;popqa;Who is the author of Almanac of the Dead?;Leslie Marmon Silko;Leslie Marmon Silko;1;;ok;;1
+A096;0;2wikimultihopqa;Are both lakes, Takhlakh Lake and Lake Powell, located in the same country?;yes;No, they are not.;0;;ok;;1
+A097;0;triviaqa;Which golfer won the US Masters Tournament in April 2014?;Gerry Lester %22Bubba%22 Watson, Jr. | Bubba Watson | Bubba Watson, Jr. | Bubba Watson Jr. | BUBBA WATSON;Bubba Watson;1;;ok;;1
+A098;0;nq;who sings thanks for making me a fighter;Christina Aguilera;Christina Aguilera;1;;ok;;1
+A099;0;triviaqa;Timothy McVeigh was executed in the United States in 2001 for a bombing atrocity in which 168 people were killed and over 800 injured. In which state capital city did the atrocity take place?;OKC, OK | Oklahoma City, Oklahoma, U.S.A. | Capital of Oklahoma | Okalhoma City, OK | Oklahoma City, OK | Oklahoma City, Oklahoma | Oklahoma City, Oklahoma, USA | Oklas | Renaissance City | UN/LOCODE:USOKC;Oklahoma City;1;;ok;;1
+A100;0;musique;When did the party that gained control of Congress in the midterm elections in 1946 take control of the government branch that determines the rules of the US House?;January 2015;January 1947;0;"gold looks wrong (2015); answer differs anyway";ok;;1
+A101;0;triviaqa;By what name is the writer Alfred Maximovitch Peshkov better known?;Alexei Maximovich Peshkov | Amma (novel) | Алексей Максимович Пешков | Maksim Gorky | Maxim Gorki | Alexei Peshkov | Aleksei Peshkov | Poslední | Alexey Gorky | Aleksey Maximovich Peshkov;Zinovy Peshkov;0;;ok;;1
+A102;0;musique;How many games in a season of the league in which Barcelona won titles in 1948 and 1949?;38;38;1;;ok;;1
+A103;0;2wikimultihopqa;Who is the sibling-in-law of Errikos Kontarinis?;Christoforos Nezer | Christoforos Nezer (d. 1996);Marika Nezer;0;;ok;;1
+A104;0;hotpotqa;Bill Woodfull opened pairing with what cricketer who died in April of 1991?;Bill Ponsford;Bill Ponsford;1;;ok;;1
+A105;0;hotpotqa;How many films were directed by the director of Wise Blood?;37;I can't pin down a reliable count without more context. Wise Blood (1979) was directed by John Huston, who directed roughly 40 feature films, so about 40.;0;'about 40' vs 37;ok;;1
+A106;0;hotpotqa;Which Indian cricketer was the penultimate holder of the title Nawab of Pataudi?;Iftikhar Ali Khan;Sachin Tendulkar;0;;ok;;1
+A107;0;popqa;Who was the screenwriter for Travels with My Aunt?;Jay Presson Allen | Hugh Wheeler | Hugh Callingham Wheeler;Arthur Hastings;0;;ok;;1
+A108;0;2wikimultihopqa;Which film was released first, Westerplatte (Film) or Terror-Creatures From The Grave?;Terror-Creatures From The Grave | Terror-Creatures from the Grave | 5 tombe per un medium;Terror-Creatures From The Grave;1;;ok;;1
+A109;0;musique;Who played who sang is she really going out with him in the performer of The One movie?;Lawrence Hilton - Jacobs;"Jordan Wyman? No — this is the 2000s hit: ""Is She Really Going Out with Him?"" was sung by Joe Jonas... Correction: the song is by Joe Jonas? No. /  / Actually, the song ""Is She Really Going Out with Him?"" is performed by Joe Jonas in the film *Camp Rock*, not ""The One."" If you mean the film *The One* (2001), I'm not certain of the performer, so I can't give a reliable answer.";0;;ok;;1
+A110;0;2wikimultihopqa;Where was the director of film The Chair (Film) born?;Sydney, Australia | Sydney, NSW | Sydney, New South Wales, Australia | Sydney, New South Wales | Sydney, NSW, Australia | Sydney | Sydney-Sider | Sydneysider;Copenhagen, Denmark;0;;ok;;1
+A111;0;musique;What does SEAL stand for in the military group that is part of the branch that operates the USS Chillicothe?;Sea, Air, and Land;Sea, Air, and Land;1;;ok;;1
+A112;0;musique;When was the most recent BFC award given to the city where the only record music group larger than the recording label for The Lost Trident Sessions is located?;2013;2023;0;;ok;;1
+A114;0;popqa;Who was the director of My Sister, My Sitter?;Jim Reardon;Jim Reardon;1;;ok;;1
+A115;0;hotpotqa;What song written by Jimmy Webb inspired the name of a supergroup including Johnny Cash?;Highwayman;Wichita Lineman;0;;ok;;1
+A116;0;popqa;What is the capital of Hungary?;Budapest | Buda Pest | Buda-Pest | Budapešť | Budapesta | Budapeszt | Buda | Ofen | Budín | Budim;Budapest.;1;;ok;;1
+A117;0;popqa;What is the capital of Maine?;Le Mans | Cenomanensium | Croix-Gazonfière | Sainte-Croix (réunie au Mans) | Saint-Georges-du-Plain (réunie au Mans) | Denis-des-Coudrais;Augusta;0;"ambiguous question; gold is the French province Maine";ok;;1
+A118;0;nq;who played momma in throw momma from the train;Anne Ramsey;Anne Ramsey;1;;ok;;1
+A119;0;hotpotqa;did Robert Wise have more award nominations than Zoltan Korda?;yes;Yes;1;;ok;;1
+A120;0;2wikimultihopqa;Where was the father of Philip Of Hachberg-Sausenberg born?;Rötteln Castle;Rötteln Castle;1;;ok;;1
+A121;0;hotpotqa;Are both Deerhunter and Nine Lashes American Christian rock bands?;no;No;1;;ok;;1
+A122;0;2wikimultihopqa;Where did the director of film Corazón De Criolla die?;Buenos Aires | Autonomous City of Buenos Aires | Buenos Aires, Argentina | Buenos Ayres | Bonaerense | Porteño;Buenos Aires;1;;ok;;1
+A123;0;nq;what type of literature is the great gatsby;novel;Modernist novel;1;;ok;;1
+A124;0;nq;who wrote the original you are my sunshine;Paul Rice | Mitchell;Billy Joel;0;;ok;;1
+A125;0;2wikimultihopqa;Which film came out first, Blue Is The Warmest Colour or Danger Valley?;Danger Valley;Danger Valley;1;;ok;;1
+A127;0;2wikimultihopqa;Which film has the director died later, Modern Husbands or The Fighting Vigilantes?;Modern Husbands | Maridos modernos;Modern Husbands;1;;ok;;1
+A128;0;2wikimultihopqa;Which film has the director who was born earlier, Rockshow or Sheba, Baby?;Rockshow;Sheba, Baby;0;;ok;;1
+A129;0;musique;On Knight Rider's console, what was maximum games per year per developer imposed by Nintendo?;five;Five games;1;;ok;;1
+A130;0;hotpotqa;Who brewed the first espresso coffee in space, Patrick Baudry or Samantha Cristoforetti?;Samantha Cristoforetti;Samantha Cristoforetti;1;;ok;;1
+A131;0;popqa;Who was the producer of House on Haunted Hill?;Robert Zemeckis | Robert L. Zemeckis | Robert Lee Zemeckis | Joel Silver;William Castle;0;ambiguous: 1959 original vs 1999 remake (gold);ok;;1
+A133;0;popqa;Who is the father of Joseph?;Jacob | Israel | Ya'akov | Ya'aqov | Yaakov | Yisrael;Isaac Sharp;0;;ok;;1
+A134;0;2wikimultihopqa;Which film has the director who died later, Akhono Onek Raat or Bitter Rice?;Akhono Onek Raat | Ekhono Anek Raat;Akhono Onek Raat;1;;ok;;1
+A135;0;musique;What league does the team that uses Dick's Sporting Goods Park play for?;Major League Soccer | MLS;Major League Soccer (MLS);1;;ok;;1
+A136;0;popqa;In what city was Masaru Inada born?;Sapporo;Tottori Prefecture;0;;ok;;1
+A137;0;popqa;What genre is Suikoden Tierkreis?;role-playing video game | RPG | RPVG | role playing video game | role-playing game | role playing video games | CRPG | computer RPG | computer role-playing video game | RP video game;Role-playing video game;1;;ok;;1
+A138;0;musique;What is the name of the castle found in the birthplace of the performer of Falling Out?;Casa Loma;Chicago;0;;ok;;1
+A141;0;hotpotqa;Geoffrey Serle wrote a biography about which Australian military commander who planned the Allied attack at the Battle of Amiens in 1918?;John Monash;John Monash;1;;ok;;1
+A142;0;popqa;In what country is Thabazimbi?;South Africa | Republic of South Africa | RSA | SA | za | 🇿🇦 | zaf;South Africa;1;;ok;;1
+A143;0;2wikimultihopqa;Where was the place of death of the director of film Clegg (Film)?;Canadian | can | One Law for the Woman | 🇨🇦 | CAN | Canada | British North America | ca | CDN | Dominion of Canada;London;0;;ok;;1
+A144;0;2wikimultihopqa;Are director of film Poker In Bed and director of film The Machine To Kill Bad People both from the same country?;yes;Yes;1;;ok;;1
+A146;0;musique;When did the person who took over the territory and made it part of their empire die?;323 BC;1876;0;;ok;;1
+A147;0;triviaqa;Jill Munroe, Sabrina Duncan, Kelly Garrett, Kris Munroe, Tiffany Welles and Julie Rogers were characters in which US TV series?;Charlies angels | Charlie’s Angels | Charlies Angels | Charles %22Charlie%22 Townsend | Charlie's Angels | Charlie's Angels (2010 TV series) | Charlie's angles | Charlie's Angels (1976 TV series) | Charley's angels;The Fresh Prince of Bel-Air;0;;ok;;1
+A148;0;nq;when is the season 3 of fuller house coming out;September 22 , 2017;Not announced;0;;ok;;1
+A149;0;triviaqa;How was the American gangster and bank-robber Lester J Gillis, associated with John Dillinger, better known?;Lester Gillis | George %22Baby Face%22 Nelson | Baby Face Nelson | Babyface Nelson | Lester Nelson | Joseph Lester Gillis | Lester M. Gillis | Baby-Face George Nelson | Babyface nelson;Baby Face Nelson;1;;ok;;1
+A150;0;2wikimultihopqa;Does Éric Ruf have the same nationality as Jean Léonard Marie Poiseuille?;yes;Yes;1;;ok;;1
+A151;0;2wikimultihopqa;Where did the presenter of Tim Russert (Talk Show) die?;Washington | D.C. | Washington D.C. | Washington DC | Washington, D.C. | Washington, District of Columbia | DC | District of Columbia | Washington, DC | Washingtonian;June 2008;0;;ok;;1
+A152;0;triviaqa;A member of the family Characidae, the omnivorous freshwater fish known as the piranha is native to the waters of which continent?;South amerika | South america | Prehistory of South America | South American capital cities | Southamericans | S. America | South American continent | America do Sul | South America (region) | South America (continent);South America;1;;ok;;1
+A153;0;2wikimultihopqa;Which film was released first, Sesh Sangbad or Theresa: The Body Of Christ?;Theresa: The Body Of Christ | Theresa: The Body of Christ;Theresa: The Body of Christ;1;;ok;;1
+A154;0;triviaqa;People packed Wembley Stadium in 1954 to listen to whom;William Franklin Graham | Reverend Billy Graham Jr. | Billy Graham Evangelical Association | Angels: Gods Secret Agents | Billy gram | Angels: God's Secret Agents | Billy graham | Billy Gram | Angels Gods Secret Agents | Puff Graham;The Beatles;0;;ok;;1
+A155;0;2wikimultihopqa;Who is Jacques, Hereditary Prince Of Monaco's paternal grandfather?;Rainier III | Rainier Louis Henri Maxence Bertrand Grimaldi | Rainier III, Prince of Monaco;Rainier III;1;;ok;;1
+A156;0;2wikimultihopqa;What nationality is the director of film Sweet Substitute (Film)?;South Africa | SA | zaf | 🇿🇦 | RSA | za | Republic of South Africa | South African;Hong Kong (Chinese);0;;ok;;1
+A157;0;popqa;What genre is Lagoon?;role-playing video game | RPG | RPVG | role playing video game | role-playing game | role playing video games | CRPG | computer RPG | computer role-playing video game | RP video game;Science fiction novel;0;;ok;;1
+A158;0;2wikimultihopqa;Which film was released earlier, Soul At Peace or Cada Quién Su Lucha?;Cada Quién Su Lucha | Cada quién su lucha | Cada quien su lucha;Cada quién su lucha;1;;ok;;1
+A159;0;musique;Who was the first person to control a spacecraft, from the country the top-ranking Warsaw Pact operatives came from, despite it being headquartered in the country called the nobilities commonwealth?;Gherman Titov;Soviet Union;0;country, not the person;ok;;1
+A160;0;nq;who wrote lets call the whole thing off;George Gershwin | Ira Gershwin;George and Ira Gershwin;1;;ok;;1
+A161;0;popqa;What genre is Dark Matter?;science fiction | SF | scifi | sci Fi | sci-Fi | science-fiction | sci fi | sciencefiction;Science fiction;1;;ok;;1
+A162;0;2wikimultihopqa;Who is the paternal grandfather of Prince Henri Of Orléans?;Prince Ferdinand Philippe, Duke of Orléans | Duke of Orleans Ferdinand Philippe | Duc d'Orleans Ferdinand-Philippe | Ferdinand-Philippe-Louis-Charles-Henri, Duc d' Orléans | Duc d'Orleans Ferdinand-Philippe-Louis-Charles-Henri | Duke Of Orleans Ferdinand Philippe | Prince Ferdinand Philippe of Orléans | Ferdinand Philippe, Duke of Orléans;Prince Robert, Duke of Chartres;0;;ok;;1
+A163;0;2wikimultihopqa;Who is older, John Curtiss Underwood or John Benson Brooks?;John Curtiss Underwood;John Curtiss Underwood;1;;ok;;1
+A164;0;popqa;Who is the mother of Sajeeb Wazed?;Sheikh Hasina | Sheikh Hasina Wazed | Hasina Wazed;Sheikh Hasina Wazed;1;;ok;;1
+A165;0;hotpotqa;The largest lake in New Hampshire sits how many vertical feet lower than Lake Kanasatka?;nine vertical feet;Nine vertical feet lower.;1;;ok;;1
+A166;0;triviaqa;Which planet in our solar system has a white cloud pattern in its atmosphere nicknamed ‘Scooter’?;8th planet | Le Verrier's planet | Neptuno (planet) | Neptune the blue ocean planet | Planet Neptune | Sol 8 | Sol IIX | Neptune (Planet) | Neptune's weather | Neptune (astronomy);Saturn;0;;ok;;1
+A167;0;nq;who is talking at the beginning of wale matrimony;Jerry Seinfeld;Jerry Seinfeld;1;;ok;;1
+A169;0;hotpotqa;The Argentine PGA Championship record holder has won how many tournaments worldwide?;230;16 victories worldwide;0;;ok;;1
+A170;0;popqa;Who was the director of Tiger?;Swapan Saha;David Cameron;0;;ok;;1
+A171;0;triviaqa;What is the capital of the central Italian region of Umbria?;Perugia, Italy | Perugia | Perugian | Mugnano (Perugia) | UN/LOCODE:ITPEG | Canneto (Perugia);Perugia;1;;ok;;1
+A172;0;popqa;Who was the director of The Cook?;Roscoe Arbuckle | Fatty Arbuckle | Roscoe Conkling Arbuckle | William Goodrich;I'm not certain which film you mean. Could you clarify the year or details?;0;;ok;;1
+A173;0;2wikimultihopqa;Which film has the director who is older, Her Country'S Call or Pyaar Kiya To Darna Kya (1998 Film)?;Her Country'S Call | Her Country's Call;Her Country's Call;1;;ok;;1
+A174;0;hotpotqa;Are both Volvic and Canfield's Diet Chocolate Fudge natural spring waters ?;no;No, they are not.;1;;ok;;1
+A175;0;musique;What label was responsible for who sang or played Delta Hardware?;Kicking Mule Records | Real World Records;Real World Records;1;;ok;;1
+A177;0;musique;What league does the team that uses Dick's Sporting Goods Park play for?;Major League Soccer | MLS;USL Championship.;0;;ok;;1
+A178;0;hotpotqa;Are George Stevens and Luc Besson American cinematographers?;no;No.;1;;ok;;1
+A180;0;musique;When was the end of the governorship where the head of Catholicism is, along with the basilica named after the saint who San Pietro in Ciel d'Oro is named for?;1952;1929;0;;ok;;1
+A181;0;musique;Where was Mary's betrothed born?;Nazareth;Unknown;0;;ok;;1
+A182;0;popqa;In what city was William Osler born?;Ontario | ONT | ON;Bond Head, Ontario;1;"town plus province; gold is the province";ok;;1
+A184;0;popqa;In what country is Tadami Line?;Japan | State of Japan | Land of the Rising Sun | Nihon | Nippon | JP | Nippon-koku | Nihon-koku | JA | JPN;Japan;1;;ok;;1
+A185;0;nq;how many episodes in rupauls drag race season 9;14;28 episodes.;0;;ok;;1
+A186;0;musique;Who has the most hits in the history of the organization that includes the team Jim Wilson was released by?;Pete Rose;Pete Rose;1;;ok;;1
+A187;0;nq;who does the voice of jessie in toy story 2;Joan Cusack;Joan Cusack;1;;ok;;1
+A188;0;hotpotqa;Lesley Foxcroft worked with MDF, Card, and which material that is produced by pressing together moist fibres?;Paper;Paper;1;;ok;;1
+A189;0;triviaqa;The dog Timmy made how many in Enid Blyton's 'Famous...' series of children's adventure books?;five | 5;Five;1;;ok;;1
+A190;0;hotpotqa;What record company does distribution for Joan Marie Larkin and Kenny Laguna?;Blackheart Records;MCA Records;0;;ok;;1
+A191;0;nq;who sang hungry eyes in the movie dirty dancing;Eric Carmen;"Assets: The song ""Hungry Eyes"" was sung by Eric Carmen? Wait, in Dirty Dancing (1987) ""Hungry Eyes"" is performed by Eric Carmen. Actually ""Hungry Eyes"" sung by Eric Carmen. But the original? Yes Eric Carmen. So respond with ""Eric Carmen"". Short phrase only.";1;reasoning leak, final Eric Carmen;ok;;1
+A192;0;popqa;What is the capital of Canton of Bern?;Bern | Berne | city of Bern | Berna;Bern;1;;ok;;1
+A193;0;nq;who sang take on me in the 90s;Reel Big Fish;Morten Harket;0;;ok;;1
+A194;0;popqa;What genre is Amen?;sitcom | situational comedy | situation comedy;Gospel;0;;ok;;1
+A195;0;musique;Who is the father of the performer of Qui de noux deux?;Louis Chedid;Jean-Pierre;0;;ok;;1
+A196;0;musique;The Pee Dee River leads to a bay which leads to an ocean. Who led an attempt to link that ocean with the Pacific via a canal through the continental region containing the El Valle volcano?;Ferdinand de Lesseps;The United States;0;;ok;;1
+A197;0;hotpotqa;Who is the author of the series in which Rupert Grint plays one of the three main characters?;J. K. Rowling;J. K. Rowling;1;;ok;;1
+A198;0;triviaqa;'Magnificent Century' is among what hugely popular Turkish export to Arab and Balkan regions in the 2000s?;TV dramas | Television drama series | TV Drama | Teledrama | Drama series | Televised dramas | Drama Series | Dramatic programming | Dramatic television series | TV drama;Turkish textiles;0;;ok;;1
+A199;0;2wikimultihopqa;Which film whose director was born first, Something Like Love or Gilbert Dying To Die?;Gilbert Dying To Die | Gilbert Dying to Die;Something Like Love;0;;ok;;1
+A200;0;popqa;What genre is Skin?;rock music | rock and roll | rock | Rock;Horror;0;;ok;;1

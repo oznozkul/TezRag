@@ -302,6 +302,12 @@ flagged, then `incomplete` on retry, and is counted as wrong.
   `labels_<name>.csv`; `labels_claude-opus-5-5.csv` holds labels written by Claude Opus 5.5
   (2026-11-17). They are a strong-model reference, reported under that name, never as human labels;
   hand labels in `sheet.csv` are compared with them when present.
+  Review route (LLM pre-annotation + author verification): `python -m src.annotation --review
+  claude-opus-5-5` wrote `results/annotation/review.csv`, which shows each item with the suggested
+  label; the author writes `ok`, `1`, `0` or `?` in `verdict`. Items whose suggestion disagrees with
+  accuracy or the judge, or is `?`, come first (`check_first` = 1). Reviewed rows are reported as
+  `author_verified`, with the number of changed suggestions; the author saw the suggestion, so these
+  labels are not independent of it and are not reported as `human`.
 - **Routers without an LLM call** ([src/learned_routers.py](src/learned_routers.py),
   [src/router_features.py](src/router_features.py); `python -m src.learned_routers`, then evaluate):
   dataset prior, question-text rules, BM25 retrieval scores, TF-IDF, bge-small embeddings, kNN, and
@@ -421,9 +427,11 @@ model can be compared with GPT-5 nano and DeepSeek. One call at a time. Logs go 
 - Sparse retrieval only (BM25); no dense retriever or reranker.
 - **Correctness is measured by string containment first.** Accuracy misses correct answers worded
   differently from the gold ("Christopher Lloyd" for "Christopher Allen Lloyd") and cannot see
-  outdated golds. The LLM judge is a second criterion, checked against 200 hand labels. The default
+  outdated golds. The LLM judge is a second criterion, checked against 200 reference labels written by
+  Claude Opus 5.5 and verified item by item by the author (`author_verified`, see the review route);
+  no labels were made blind to a suggestion, so anchoring on the suggestion is possible. The default
   judge is GPT-5 nano, which also produced one of the six answer sets; it may grade its own answers
-  more leniently, so agreement with the hand labels is reported separately for its own answers and for the other models' answers.
+  more leniently, so agreement with the reference labels is reported separately for its own answers and for the other models' answers.
 - **Oracle savings depend on the definition.** The optimistic oracle's savings assume the router knows
   when retrieval will also fail. Claims about what a perfect router can save are made against
   `oracle_realistic`; both are reported.
